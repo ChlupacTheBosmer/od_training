@@ -1,0 +1,16 @@
+# Core Compatibility Pins
+numpy<2.0.0
+pydantic>=2.0.0
+
+# Model Frameworks
+ultralytics
+rfdetr[metrics]
+
+# Data & Utilities
+roboflow
+globox
+supervision
+python-dotenv
+
+# Experiment Tracking
+clearml

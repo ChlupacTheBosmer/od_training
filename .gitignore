@@ -16,6 +16,7 @@ runs/
 *.pt
 *.engine
 *.onnx
+output/
 
 # External References (Not tracked)
 external/
