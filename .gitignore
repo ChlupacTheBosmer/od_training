@@ -1,0 +1,21 @@
+# System
+.DS_Store
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+
+# Python
+venv/
+env/
+.env
+
+# Data & Models
+data/
+runs/
+*.pt
+*.engine
+*.onnx
+
+# External References (Not tracked)
+external/
