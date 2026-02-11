@@ -1,3 +1,9 @@
+"""Generate and inspect quick augmentation previews for a YOLO dataset.
+
+This module is a lightweight workflow helper used to validate augmentation
+behavior before running heavier dataset pipelines in ``dataset.manager``.
+"""
+
 import sys
 from pathlib import Path
 
@@ -15,9 +21,15 @@ import cv2
 import numpy as np
 
 def define_pipeline(width=640, height=640):
-    """
-    Define the Albumentations pipeline.
-    Customize this function to add/remove augmentations.
+    """Build the default Albumentations pipeline for preview generation.
+
+    Args:
+        width: Target crop width used by random crop transform.
+        height: Target crop height used by random crop transform.
+
+    Returns:
+        Configured ``albumentations.Compose`` pipeline operating on YOLO-style
+        normalized bounding boxes.
     """
     transform = A.Compose([
         A.RandomCrop(width=width, height=height, p=0.5),
@@ -29,9 +41,17 @@ def define_pipeline(width=640, height=640):
     return transform
 
 def augment_and_view(dataset_dir: str, name: str = "my_dataset", yaml_path: str = None):
-    """
-    Load a YOLO dataset into FiftyOne, apply augmentations via plugin (if available) 
-    or manually, and launch the App.
+    """Load a dataset and save one annotated augmented sample for inspection.
+
+    This routine complements ``dataset.manager`` by providing a fast feedback
+    loop for transform tuning. It loads/imports the target dataset in FiftyOne,
+    applies the local preview pipeline to one sample, and writes an annotated
+    image to ``runs/augmentation_test/aug_sample.jpg``.
+
+    Args:
+        dataset_dir: Path to YOLO dataset directory.
+        name: FiftyOne dataset name to load or create.
+        yaml_path: Optional explicit YAML path for import.
     """
     # 1. Load Dataset
     dataset_dir = os.path.abspath(dataset_dir)
@@ -146,6 +166,7 @@ def augment_and_view(dataset_dir: str, name: str = "my_dataset", yaml_path: str 
     # session.wait()
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI parser for augmentation preview commands."""
     parser = argparse.ArgumentParser(description="Augment data with FiftyOne and Albumentations")
     parser.add_argument("--dataset", type=str, required=True, help="Path to YOLO dataset directory (containing dataset.yaml not supported directly by FiftyOne YOLO importer usually, needs dir structure)")
     parser.add_argument("--name", type=str, default="my_dataset", help="FiftyOne dataset name")
@@ -154,6 +175,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None):
+    """CLI entrypoint for augmentation preview workflow.
+
+    Args:
+        argv: Optional argument list. Uses ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code ``0`` on successful completion.
+    """
     args = build_parser().parse_args(argv)
     augment_and_view(args.dataset, args.name, args.yaml)
     return 0

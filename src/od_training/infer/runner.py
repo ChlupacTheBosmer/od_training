@@ -1,10 +1,13 @@
+"""Inference utilities for YOLO and RF-DETR models.
+
+This module provides model loading and a unified runner used by the CLI layer.
+"""
+
 import argparse
 import os
 import cv2
 import supervision as sv
 from pathlib import Path
-import numpy as np
-from typing import Union, List
 
 
 from ..utility.runtime_config import ensure_local_config
@@ -41,10 +44,16 @@ except ImportError:
     print("Warning: RF-DETR not found or imports failed. RF-DETR inference will not be available.")
 
 def load_rfdetr_model(model_name: str, rfdetr_arch: str = None):
-    """
-    Load RF-DETR model.
-    If model_name is a key in map, instantiate it (downloads weights).
-    If model_name is a path, instantiate arch (default Medium) with pretrain_weights=path.
+    """Load an RF-DETR model by known key or local checkpoint path.
+
+    Args:
+        model_name: RF-DETR architecture key (e.g. ``rfdetr_nano``) or path
+            to custom weights.
+        rfdetr_arch: Optional architecture hint used when ``model_name`` is a
+            custom checkpoint path.
+
+    Returns:
+        Instantiated RF-DETR model object.
     """
     if not RFDETR_AVAILABLE:
         raise ImportError("RF-DETR package not available.")
@@ -93,6 +102,18 @@ def run_inference(
     show: bool = False,
     save_dir: str = None,
 ):
+    """Run annotated inference on image/video/webcam/RTSP sources.
+
+    Args:
+        source: Input source path, webcam index string (``\"0\"``), or RTSP URL.
+        model_name: YOLO model path/name or RF-DETR key/checkpoint path.
+        model_type: Framework selector: ``\"yolo\"`` or ``\"rfdetr\"``.
+        rfdetr_arch: Optional RF-DETR architecture hint for custom checkpoints.
+        conf_threshold: Detection confidence threshold.
+        iou_threshold: IoU threshold used by YOLO prediction/NMS stage.
+        show: Whether to display live frames via OpenCV window.
+        save_dir: Optional directory for annotated outputs.
+    """
     # Load Model
     if model_type.lower() == 'yolo':
         print(f"Loading YOLO model: {model_name}")
@@ -217,6 +238,7 @@ def run_inference(
     print("Inference complete.")
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build parser for inference command arguments."""
     parser = argparse.ArgumentParser(description="Run inference using YOLO or RF-DETR models.")
     parser.add_argument("--source", type=str, required=True, help="Path to image, video, directory, or '0' for webcam")
     parser.add_argument("--model", type=str, required=True, help="Model name (e.g., yolo11n.pt, rfdetr_nano) or path to weights")
@@ -231,6 +253,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    """CLI entrypoint for inference runner.
+
+    Args:
+        argv: Optional argument list. Uses ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code ``0`` on success.
+    """
     args = build_parser().parse_args(argv)
     run_inference(
         source=args.source,

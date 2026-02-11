@@ -77,6 +77,7 @@ def upload_weights(
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build parser for Roboflow weight upload arguments."""
     parser = argparse.ArgumentParser(description="Upload weights to Roboflow.")
     parser.add_argument(
         "--api-key",
@@ -104,6 +105,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None):
+    """CLI entrypoint for Roboflow model upload.
+
+    Args:
+        argv: Optional argument list. Uses ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code ``0`` on success.
+    """
     parser = build_parser()
     args = parser.parse_args(argv)
     try:

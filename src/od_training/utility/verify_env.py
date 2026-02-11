@@ -99,6 +99,15 @@ def _check_hardware():
 
 
 def main(argv=None):
+    """CLI entrypoint for environment verification checks.
+
+    Args:
+        argv: Unused. Accepted for CLI signature consistency.
+
+    Returns:
+        Exit code ``0`` in normal control flow; actual process code is emitted
+        by ``verify()`` via ``sys.exit``.
+    """
     del argv
     verify()
     return 0

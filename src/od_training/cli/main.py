@@ -29,6 +29,11 @@ DISPATCH = {
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the top-level CLI parser for group/command dispatch.
+
+    The parser intentionally captures all remaining tokens in ``args`` so they
+    can be forwarded untouched to the selected subcommand module.
+    """
     parser = argparse.ArgumentParser(
         description="od_training unified CLI",
         epilog=(
@@ -47,6 +52,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    """Route a top-level CLI invocation to the selected command handler.
+
+    Args:
+        argv: Optional argument list. When ``None``, arguments are read from
+            ``sys.argv``.
+
+    Returns:
+        Process-style exit code from the dispatched command.
+    """
     ns = build_parser().parse_args(argv)
     key = (ns.group, ns.command)
     entry = DISPATCH.get(key)

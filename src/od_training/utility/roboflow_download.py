@@ -335,6 +335,14 @@ def import_to_fiftyone(dataset_path: str, format_type: str, dataset_name: str,
 
 
 def main(argv=None):
+    """Download a Roboflow dataset and optionally import it into FiftyOne.
+
+    Args:
+        argv: Optional argument list. Uses ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code ``0`` on success. Exits with non-zero status on failures.
+    """
     parser = argparse.ArgumentParser(
         description="Download datasets from Roboflow with optional FiftyOne import.",
         formatter_class=argparse.RawDescriptionHelpFormatter,

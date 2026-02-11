@@ -25,11 +25,13 @@ _DEFAULT_CONFIG: Dict[str, Any] = {
 
 
 def get_repo_root() -> Path:
+    """Return repository root path for the package layout."""
     # src/od_training/utility/runtime_config.py -> repo root is parents[3]
     return Path(__file__).resolve().parents[3]
 
 
 def get_config_path() -> Path:
+    """Return absolute path to the local runtime config file."""
     return get_repo_root() / "config" / "local_config.json"
 
 
@@ -52,6 +54,14 @@ def ensure_local_config(config_path: Path | None = None) -> Tuple[Path, bool]:
 
 
 def load_local_config(config_path: Path | None = None) -> Dict[str, Any]:
+    """Load local runtime configuration JSON as a dictionary.
+
+    Args:
+        config_path: Optional explicit config file path.
+
+    Returns:
+        Parsed JSON mapping.
+    """
     path, _ = ensure_local_config(config_path)
 
     try:
@@ -67,6 +77,7 @@ def load_local_config(config_path: Path | None = None) -> Dict[str, Any]:
 
 
 def _is_placeholder(value: Any) -> bool:
+    """Return whether a config value should be treated as unset placeholder."""
     if not isinstance(value, str):
         return True
     stripped = value.strip()
@@ -74,6 +85,14 @@ def _is_placeholder(value: Any) -> bool:
 
 
 def get_roboflow_api_key(explicit_key: str | None = None) -> str:
+    """Resolve Roboflow API key from CLI override, config, or environment.
+
+    Args:
+        explicit_key: Optional explicit API key from caller/CLI.
+
+    Returns:
+        Resolved API key string.
+    """
     if explicit_key and explicit_key.strip():
         return explicit_key.strip()
 

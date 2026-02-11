@@ -1,3 +1,5 @@
+"""RF-DETR training entrypoints and CLI helpers."""
+
 import argparse
 from pathlib import Path
 import os
@@ -45,8 +47,21 @@ def train_rfdetr(
     device: str = None,
     **kwargs,
 ):
-    """
-    Trains RF-DETR on a local COCO dataset.
+    """Train RF-DETR on a local dataset with optional pass-through kwargs.
+
+    This function is the RF-DETR counterpart to ``train.yolo.train_yolo`` and
+    is intended to be called from the unified CLI dispatcher.
+
+    Args:
+        dataset_dir: Dataset root directory expected by RF-DETR.
+        model_type: RF-DETR model key or alias.
+        epochs: Number of training epochs.
+        batch_size: Batch size per step.
+        lr: Learning rate forwarded as ``learning_rate``.
+        project_name: Tracking/output project name.
+        exp_name: Run name for tracking/output grouping.
+        device: Optional explicit device override.
+        **kwargs: Additional RF-DETR ``model.train`` arguments.
     """
     logger.info(f"Initializing ClearML Task: {project_name}/{exp_name}")
     try:
@@ -129,6 +144,7 @@ def train_rfdetr(
     logger.info("Training complete.")
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build parser for RF-DETR training CLI arguments."""
     parser = argparse.ArgumentParser(description="Train RF-DETR models.")
     parser.add_argument("--dataset", type=str, required=True, help="Path to dataset directory (must contain train/valid/test subfolders with COCO json)")
     parser.add_argument("--model", type=str, default="rf-detr-resnet50", help="Model architecture (rf-detr-resnet50, rf-detr-resnet101)")
@@ -143,6 +159,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    """CLI entrypoint for RF-DETR training.
+
+    Args:
+        argv: Optional argument list. Uses ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code ``0`` on success.
+    """
     args, unknown = build_parser().parse_known_args(argv)
     kwargs = parse_unknown_args(unknown)
 

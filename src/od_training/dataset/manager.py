@@ -1,3 +1,9 @@
+"""Dataset management pipeline for import, split, augmentation, and export.
+
+The functions in this module form the core data-preparation path used by the
+dataset CLI commands and downstream training workflows.
+"""
+
 import argparse
 import json
 from pathlib import Path
@@ -22,9 +28,14 @@ warnings.filterwarnings("ignore", category=UserWarning, module="albumentations")
 # AUGMENTATION PIPELINES
 # =============================================================================
 def get_augmentation_pipeline(width=640, height=640):
-    """
-    Define the Albumentations pipeline.
-    Adjust this function to change your augmentation strategy.
+    """Build the default augmentation pipeline used by ``augment_samples``.
+
+    Args:
+        width: Target crop width.
+        height: Target crop height.
+
+    Returns:
+        ``albumentations.Compose`` configured for YOLO-format bboxes.
     """
     transform = A.Compose([
         A.RandomCrop(width=width, height=height, p=0.5),
@@ -40,10 +51,18 @@ def get_augmentation_pipeline(width=640, height=640):
 # DATASET LOADING & SPLITTING
 # =============================================================================
 def load_or_create_dataset(dataset_dir, name, split_ratios=None, train_tag="train", val_tag="val", test_tag="test"):
-    """
-    Load a dataset from disk or FiftyOne DB. 
-    If not in DB, imports from `dataset_dir` (YOLO format).
-    If `split_ratios` provided, performs random split on untagged samples.
+    """Load a FiftyOne dataset or import it from a YOLO dataset directory.
+
+    Args:
+        dataset_dir: Path to YOLO dataset directory or YAML file.
+        name: FiftyOne dataset name.
+        split_ratios: Optional ``dict`` with train/val/test split ratios.
+        train_tag: Tag name for training samples.
+        val_tag: Tag name for validation samples.
+        test_tag: Tag name for test samples.
+
+    Returns:
+        Loaded or newly imported ``fiftyone.Dataset`` instance.
     """
     if name in fo.list_datasets():
         print(f"Loading existing dataset: {name}")
@@ -340,6 +359,7 @@ def _fix_coco_filenames(json_path):
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build parser for the dataset manager CLI command."""
     parser = argparse.ArgumentParser(description="Dataset Manager: Load, Augment, Export.")
     
     # Init / Load
@@ -370,6 +390,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None):
+    """Execute dataset management workflow from CLI arguments.
+
+    The flow is ordered as: load/import -> optional augment -> optional export
+    -> optional FiftyOne app launch.
+
+    Args:
+        argv: Optional argument list. Uses ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code ``0`` on success.
+    """
     args = build_parser().parse_args(argv)
     ratios = {"train": 0.7, "val": 0.2, "test": 0.1} if args.split else None
     dataset = load_or_create_dataset(

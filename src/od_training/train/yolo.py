@@ -1,3 +1,5 @@
+"""YOLO training entrypoints and CLI helpers."""
+
 import argparse
 import os
 from ultralytics import YOLO
@@ -15,15 +17,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def train_yolo(model_name: str, data_yaml: str, project_name: str, exp_name: str, **kwargs):
-    """
-    Wrapper for Ultralytics YOLO training with ClearML integration.
-    
+    """Train a YOLO model with optional ClearML initialization.
+
+    This function is the YOLO counterpart to ``train.rfdetr.train_rfdetr`` and
+    is intended to be invoked via the unified CLI.
+
     Args:
-        model_name: Model version (e.g., 'yolo11n.pt', 'yolo26n.pt').
-        data_yaml: Path to data.yaml.
-        project_name: ClearML/YOLO project name.
-        exp_name: Experiment name.
-        **kwargs: Any additional arguments passed to model.train().
+        model_name: Ultralytics model weights/name.
+        data_yaml: Dataset YAML path.
+        project_name: Project name used by ClearML and Ultralytics outputs.
+        exp_name: Run name used by ClearML and Ultralytics outputs.
+        **kwargs: Additional arguments forwarded to ``model.train``.
+
+    Returns:
+        Ultralytics training results object.
     """
     logger.info(f"Initializing ClearML Task: {project_name}/{exp_name}")
     # Initialize ClearML task
@@ -66,6 +73,7 @@ def train_yolo(model_name: str, data_yaml: str, project_name: str, exp_name: str
     return results
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build parser for YOLO training CLI arguments."""
     parser = argparse.ArgumentParser(description="Train YOLO models (v11/v26) with full config support.")
     parser.add_argument("--model", type=str, default="yolo11n.pt", help="Model weights (yolo11n.pt, yolo26n.pt)")
     parser.add_argument("--data", type=str, required=True, help="Path to data.yaml")
@@ -79,6 +87,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> int:
+    """CLI entrypoint for YOLO training.
+
+    Args:
+        argv: Optional argument list. Uses ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code ``0`` on success.
+    """
     args, unknown = build_parser().parse_known_args(argv)
     kwargs = parse_unknown_args(unknown)
     train_args = {

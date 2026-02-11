@@ -1,3 +1,9 @@
+"""CLI wrapper for dataset format conversion helpers.
+
+Delegates conversion work to ``od_training.dataset.convert`` while keeping a
+small command interface for script and unified CLI usage.
+"""
+
 import argparse
 import sys
 
@@ -9,6 +15,14 @@ ensure_local_config()
 from .convert import convert_yolo_to_coco, convert_coco_to_yolo, validate_dataset
 
 def main(argv=None):
+    """Run YOLO<->COCO conversion from command-line arguments.
+
+    Args:
+        argv: Optional argument list. Uses ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code ``0`` on success.
+    """
     parser = argparse.ArgumentParser(description="Convert between YOLO and COCO formats.")
     parser.add_argument("mode", choices=["yolo2coco", "coco2yolo"], help="Conversion direction")
     parser.add_argument("--input", required=True, help="Input directory (YOLO labels dir or COCO json dir)")

@@ -1,3 +1,5 @@
+"""Inspect FiftyOne YOLO export path behavior using a tiny synthetic dataset."""
+
 import fiftyone as fo
 import os
 import sys
@@ -10,6 +12,7 @@ from src.runtime_config import ensure_local_config
 ensure_local_config()
 
 def test_export():
+    """Export a one-sample dataset and print generated ``dataset.yaml``."""
     # Load dummy dataset
     if "test_export_ds" in fo.list_datasets():
         fo.delete_dataset("test_export_ds")

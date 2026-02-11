@@ -1,3 +1,5 @@
+"""Dataset viewing helpers for FiftyOne-backed YOLO datasets."""
+
 import argparse
 import os
 
@@ -9,10 +11,20 @@ ensure_local_config()
 
 
 def check_dataset_exists(name):
+    """Return whether a FiftyOne dataset with ``name`` is available."""
     return name in fo.list_datasets()
 
 
 def import_dataset(name: str, import_dir: str):
+    """Import a YOLO dataset into FiftyOne.
+
+    Args:
+        name: Target FiftyOne dataset name.
+        import_dir: Directory path or explicit YAML file path.
+
+    Returns:
+        Imported ``fiftyone.Dataset`` instance.
+    """
     dataset_dir = os.path.abspath(import_dir)
     yaml_path = None
     if os.path.isfile(dataset_dir):
@@ -32,6 +44,7 @@ def import_dataset(name: str, import_dir: str):
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build parser for the dataset view command."""
     parser = argparse.ArgumentParser(description="View FiftyOne Dataset")
     parser.add_argument("name", help="Name of the FiftyOne dataset to view")
     parser.add_argument("--import-dir", help="Optional: Import YOLO dataset from this directory if missing.")
@@ -39,6 +52,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None):
+    """Open a dataset in FiftyOne, importing from disk when requested.
+
+    Args:
+        argv: Optional argument list. Uses ``sys.argv`` when omitted.
+
+    Returns:
+        Exit code ``0`` on success, ``1`` when dataset resolution fails.
+    """
     args = build_parser().parse_args(argv)
 
     if check_dataset_exists(args.name):

@@ -1,3 +1,5 @@
+"""Generate a tiny local dummy dataset for pipeline smoke testing."""
+
 import os
 import sys
 from PIL import Image
@@ -11,6 +13,7 @@ from src.runtime_config import ensure_local_config
 ensure_local_config()
 
 def gen_data():
+    """Create minimal YOLO-style files used by local smoke tests."""
     # Dirs
     yolo_structure = ['data/dummy_yolo/images', 'data/dummy_yolo/labels']
     coco_structure = ['data/dummy_coco/train', 'data/dummy_coco/valid', 'data/dummy_coco/test']
