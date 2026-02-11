@@ -1,3 +1,4 @@
+import importlib
 import sys
 import types
 
@@ -32,7 +33,7 @@ def _build_fake_rfdetr_module():
 
 
 @pytest.fixture
-def train_rfdetr_module(load_script_module, monkeypatch):
+def train_rfdetr_module(monkeypatch):
     fake_rfdetr = _build_fake_rfdetr_module()
     fake_clearml = types.ModuleType("clearml")
     fake_clearml.Task = types.SimpleNamespace(init=lambda **_: object())
@@ -40,7 +41,8 @@ def train_rfdetr_module(load_script_module, monkeypatch):
     monkeypatch.setitem(sys.modules, "rfdetr", fake_rfdetr)
     monkeypatch.setitem(sys.modules, "clearml", fake_clearml)
 
-    return load_script_module("train_rfdetr.py")
+    mod = importlib.import_module("src.od_training.train.rfdetr")
+    return importlib.reload(mod)
 
 
 def test_train_rfdetr_raises_for_missing_dataset(train_rfdetr_module):

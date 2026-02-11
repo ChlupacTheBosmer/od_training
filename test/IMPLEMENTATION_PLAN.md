@@ -10,19 +10,19 @@ Build a comprehensive automated test suite for this repository, with:
 This plan is based on the current code in `src/` and `scripts/`.
 
 ## 2) Current Architecture (What Connects to What)
-- `scripts/train_yolo.py`
+- `src/od_training/train/yolo.py`
   - Uses `src.device_utils.resolve_device`
   - Uses `src.cli_utils.parse_unknown_args`
   - Wraps `ultralytics.YOLO(...).train(...)` and optional `model.export(...)`
-- `scripts/train_rfdetr.py`
+- `src/od_training/train/rfdetr.py`
   - Uses `src.device_utils.resolve_device`
   - Uses `src.cli_utils.parse_unknown_args`
   - Resolves architecture via `MODEL_MAP`, then calls `model.train(...)`
-- `scripts/inference.py`
+- `src/od_training/infer/runner.py`
   - YOLO path: `YOLO(model).predict(...)` + supervision annotators
   - RF-DETR path: `load_rfdetr_model(...)` + `model.predict(...)`
   - Handles source as image file, image directory, video file, webcam/RTSP
-- `scripts/dataset_manager.py`
+- `src/od_training/dataset/manager.py`
   - Imports/loads YOLO dataset via FiftyOne
   - Optional split and augmentation
   - Export path generates:
@@ -31,9 +31,9 @@ This plan is based on the current code in `src/` and `scripts/`.
 - `src/converters.py`
   - YOLO <-> COCO conversion wrappers
   - `validate_dataset(...)` for image+label integrity
-- `scripts/convert_format.py`
+- `src/od_training/dataset/convert_cli.py`
   - CLI wrapper over `src.converters`
-- `scripts/upload_weights.py`
+- `src/od_training/utility/roboflow_upload.py`
   - Preflight checks + Roboflow SDK deploy
 
 ## 3) Proposed Test Layout
@@ -111,7 +111,7 @@ Cases:
   - out-of-range bbox values -> error
   - class index out of bounds when `class_names` provided -> error
 
-### 5.4 `scripts/dataset_manager.py`
+### 5.4 `src/od_training/dataset/manager.py`
 Targets: split, augmentation, export, COCO filename normalization
 
 Cases:
@@ -133,7 +133,7 @@ Cases:
   - normalizes to basenames when unique
   - preserves full paths when duplicates detected
 
-### 5.5 `scripts/train_yolo.py`
+### 5.5 `src/od_training/train/yolo.py`
 Target: `train_yolo`
 
 Cases:
@@ -145,7 +145,7 @@ Cases:
 - TensorRT export is triggered only when `device != cpu` and `epochs > 1`
 - TensorRT export errors are handled non-fatally
 
-### 5.6 `scripts/train_rfdetr.py`
+### 5.6 `src/od_training/train/rfdetr.py`
 Target: `train_rfdetr`
 
 Cases:
@@ -158,7 +158,7 @@ Cases:
   - if `.pth` exists -> tolerated
   - if no `.pth` exists -> re-raises
 
-### 5.7 `scripts/inference.py`
+### 5.7 `src/od_training/infer/runner.py`
 Targets: `load_rfdetr_model`, `run_inference`
 
 Cases for `load_rfdetr_model`:
@@ -177,7 +177,7 @@ Cases for `run_inference`:
 - video path initializes writer and writes output video
 - `show=False` path avoids GUI dependency
 
-### 5.8 `scripts/upload_weights.py`
+### 5.8 `src/od_training/utility/roboflow_upload.py`
 Target: `upload_weights`
 
 Cases:
@@ -187,7 +187,7 @@ Cases:
 - successful deploy calls expected SDK methods with expected params
 - deploy failure propagates exception
 
-### 5.9 `scripts/convert_format.py`
+### 5.9 `src/od_training/dataset/convert_cli.py`
 Target: CLI dispatch
 
 Cases:

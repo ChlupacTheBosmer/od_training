@@ -20,6 +20,7 @@ _DEFAULT_CONFIG: Dict[str, Any] = {
         "workspace": "<OPTIONAL_DEFAULT_WORKSPACE_ID>",
         "project": "<OPTIONAL_DEFAULT_PROJECT_ID>",
     },
+    "data_dir": "data",
 }
 
 
@@ -126,3 +127,16 @@ def get_roboflow_default(field: str) -> str | None:
         return env_value.strip()
         
     return None
+
+
+def get_data_dir() -> str:
+    """Get data directory path from local config.
+    
+    Returns:
+        Path to data directory (defaults to 'data').
+    """
+    cfg = load_local_config()
+    value = cfg.get("data_dir")
+    if value and not _is_placeholder(value):
+        return str(value).strip()
+    return "data"

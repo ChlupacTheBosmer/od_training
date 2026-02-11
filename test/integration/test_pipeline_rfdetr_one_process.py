@@ -1,5 +1,6 @@
 import json
 import shutil
+import importlib
 import uuid
 from pathlib import Path
 
@@ -36,13 +37,15 @@ def _materialize_rfdetr_dataset(export_dir: Path, target_dir: Path):
 
 def test_rfdetr_one_process_export_train_infer(
     require_model_smoke,
-    load_script_module,
     make_yolo_dataset,
     monkeypatch,
     tmp_path,
 ):
     pytest.importorskip("rfdetr")
     fo = pytest.importorskip("fiftyone")
+    dataset_manager = importlib.import_module("src.od_training.dataset.manager")
+    train_rfdetr_mod = importlib.import_module("src.od_training.train.rfdetr")
+    inference_mod = importlib.import_module("src.od_training.infer.runner")
 
     runtime_tmp = tmp_path / "runtime_tmp"
     runtime_tmp.mkdir(parents=True, exist_ok=True)
@@ -54,9 +57,6 @@ def test_rfdetr_one_process_export_train_infer(
     monkeypatch.setenv("CLEARML_OFFLINE_MODE", "1")
     monkeypatch.setenv("MPLCONFIGDIR", str(runtime_tmp / "mpl"))
 
-    dataset_manager = load_script_module("dataset_manager.py")
-    train_rfdetr_mod = load_script_module("train_rfdetr.py")
-    inference_mod = load_script_module("inference.py")
     monkeypatch.setattr(train_rfdetr_mod.Task, "init", lambda **_: object())
 
     dataset_name = f"it_rfdetr_{uuid.uuid4().hex[:8]}"

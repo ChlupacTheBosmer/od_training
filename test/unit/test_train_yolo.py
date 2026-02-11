@@ -1,3 +1,4 @@
+import importlib
 import sys
 import types
 
@@ -21,7 +22,7 @@ class _FakeModel:
 
 
 @pytest.fixture
-def train_yolo_module(load_script_module, monkeypatch):
+def train_yolo_module(monkeypatch):
     fake_ultralytics = types.ModuleType("ultralytics")
     fake_ultralytics.YOLO = object
 
@@ -31,7 +32,8 @@ def train_yolo_module(load_script_module, monkeypatch):
     monkeypatch.setitem(sys.modules, "ultralytics", fake_ultralytics)
     monkeypatch.setitem(sys.modules, "clearml", fake_clearml)
 
-    return load_script_module("train_yolo.py")
+    mod = importlib.import_module("src.od_training.train.yolo")
+    return importlib.reload(mod)
 
 
 def test_train_yolo_sets_musgd_for_yolo26(train_yolo_module, monkeypatch):

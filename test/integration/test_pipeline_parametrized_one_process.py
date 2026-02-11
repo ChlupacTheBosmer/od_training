@@ -1,3 +1,4 @@
+import importlib
 import shutil
 import sys
 import types
@@ -76,10 +77,14 @@ def _materialize_rfdetr_dataset(export_dir: Path, target_dir: Path):
         shutil.copy2(ann_src, split_dir / "_annotations.coco.json")
 
 
+def _import_and_reload(module_path: str):
+    mod = importlib.import_module(module_path)
+    return importlib.reload(mod)
+
+
 @pytest.mark.parametrize("model_type", ["yolo", "rfdetr"])
 def test_one_process_pipeline_contract(
     model_type,
-    load_script_module,
     make_yolo_dataset,
     tmp_path,
     monkeypatch,
@@ -87,10 +92,10 @@ def test_one_process_pipeline_contract(
     fo = pytest.importorskip("fiftyone")
     _stub_train_and_inference_dependencies(monkeypatch)
 
-    dataset_manager = load_script_module("dataset_manager.py")
-    train_yolo_mod = load_script_module("train_yolo.py")
-    train_rfdetr_mod = load_script_module("train_rfdetr.py")
-    inference_mod = load_script_module("inference.py")
+    dataset_manager = _import_and_reload("src.od_training.dataset.manager")
+    train_yolo_mod = _import_and_reload("src.od_training.train.yolo")
+    train_rfdetr_mod = _import_and_reload("src.od_training.train.rfdetr")
+    inference_mod = _import_and_reload("src.od_training.infer.runner")
 
     dataset_name = f"it_param_{model_type}_{uuid.uuid4().hex[:8]}"
 

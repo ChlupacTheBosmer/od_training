@@ -1,7 +1,5 @@
-import importlib.util
 import os
 import sys
-import uuid
 from pathlib import Path
 
 import cv2
@@ -24,25 +22,6 @@ def repo_root() -> Path:
 def require_model_smoke():
     if os.environ.get("RUN_MODEL_SMOKE") != "1":
         pytest.skip("Set RUN_MODEL_SMOKE=1 to run model training/inference smoke tests")
-
-
-@pytest.fixture
-def load_script_module(repo_root: Path):
-    def _load(script_filename: str, module_name: str = None):
-        script_path = repo_root / "scripts" / script_filename
-        if not script_path.exists():
-            raise FileNotFoundError(f"Script not found: {script_path}")
-
-        name = module_name or f"script_{script_path.stem}_{uuid.uuid4().hex}"
-        spec = importlib.util.spec_from_file_location(name, script_path)
-        if spec is None or spec.loader is None:
-            raise RuntimeError(f"Could not load module spec for: {script_path}")
-
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-    return _load
 
 
 @pytest.fixture

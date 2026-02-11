@@ -17,13 +17,19 @@ EXPORT_DIR="runs/pipeline_test"
 FO_DATASET="dummy_manager_test"
 FO_AUG_DATASET="dummy_manager_separate"
 
+if [ -x "venv/bin/python" ]; then
+    PYTHON_BIN="venv/bin/python"
+else
+    PYTHON_BIN="python3"
+fi
+
 # ─── 0. Clean previous runs ─────────────────────────────────────────────────
 cleanup() {
     echo "Cleaning test artifacts…"
     rm -rf "$EXPORT_DIR"
     rm -rf "data/augmented/$FO_DATASET"
     rm -rf "data/augmented/$FO_AUG_DATASET"
-    python -c "
+    "$PYTHON_BIN" -c "
 import fiftyone as fo
 for name in ['$FO_DATASET', '$FO_AUG_DATASET']:
     if name in fo.list_datasets():
@@ -36,28 +42,33 @@ cleanup
 # ─── 1. Import + split + augment to separate dataset ────────────────────────
 echo ""
 echo "=== Step 1: Import, Split & Augment ==="
-if [ -f "venv/bin/activate" ]; then
-    echo "Sourcing venv/bin/activate..."
-    source venv/bin/activate
-else
-    echo "No venv found, assuming environment is already set up."
-fi
-
-python scripts/dataset_manager.py \
+if ! "$PYTHON_BIN" scripts/odt.py dataset manage \
     --dataset-dir data/dummy_yolo/data.yaml \
     --name "$FO_DATASET" \
     --split \
     --augment \
     --augment-tags train \
-    --output-dataset "$FO_AUG_DATASET"
+    --output-dataset "$FO_AUG_DATASET"; then
+    echo "Step 1 failed."
+    if [ "$NO_CLEAN" = false ]; then
+        cleanup
+    fi
+    exit 1
+fi
 
 # ─── 2. Export — Symlink mode (default, zero-copy) ──────────────────────────
 echo ""
 echo "=== Step 2: Export (symlink mode) ==="
-python scripts/dataset_manager.py \
+if ! "$PYTHON_BIN" scripts/odt.py dataset manage \
     --name "$FO_AUG_DATASET" \
     --export-dir "$EXPORT_DIR" \
-    --export-tags augmented
+    --export-tags augmented; then
+    echo "Step 2 failed."
+    if [ "$NO_CLEAN" = false ]; then
+        cleanup
+    fi
+    exit 1
+fi
 
 
 

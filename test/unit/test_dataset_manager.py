@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from src.od_training.dataset import manager as dataset_manager_mod
 
 pytestmark = pytest.mark.unit
 
@@ -73,8 +74,13 @@ class _EmptyMatchDataset:
         return 0
 
 
-def test_fix_coco_filenames_unique(load_script_module, tmp_path):
-    mod = load_script_module("dataset_manager.py")
+@pytest.fixture
+def dataset_manager_module():
+    return dataset_manager_mod
+
+
+def test_fix_coco_filenames_unique(dataset_manager_module, tmp_path):
+    mod = dataset_manager_module
 
     p = tmp_path / "ann.json"
     p.write_text(
@@ -96,8 +102,8 @@ def test_fix_coco_filenames_unique(load_script_module, tmp_path):
     assert data["images"][1]["file_name"] == "img2.jpg"
 
 
-def test_fix_coco_filenames_duplicates_preserve_full_paths(load_script_module, tmp_path):
-    mod = load_script_module("dataset_manager.py")
+def test_fix_coco_filenames_duplicates_preserve_full_paths(dataset_manager_module, tmp_path):
+    mod = dataset_manager_module
 
     p = tmp_path / "ann.json"
     p.write_text(
@@ -119,8 +125,8 @@ def test_fix_coco_filenames_duplicates_preserve_full_paths(load_script_module, t
     assert data["images"][1]["file_name"] == "/x/y/dup.jpg"
 
 
-def test_export_pipeline_symlink_mode(load_script_module, monkeypatch, tmp_path):
-    mod = load_script_module("dataset_manager.py")
+def test_export_pipeline_symlink_mode(dataset_manager_module, monkeypatch, tmp_path):
+    mod = dataset_manager_module
 
     recorder = []
     samples = [{"tags": ["train", "augmented"]}]
@@ -150,8 +156,8 @@ def test_export_pipeline_symlink_mode(load_script_module, monkeypatch, tmp_path)
     assert yolo_calls[0]["count"] == 1
 
 
-def test_export_pipeline_copy_mode(load_script_module, monkeypatch, tmp_path):
-    mod = load_script_module("dataset_manager.py")
+def test_export_pipeline_copy_mode(dataset_manager_module, monkeypatch, tmp_path):
+    mod = dataset_manager_module
 
     recorder = []
     samples = [{"tags": ["train"]}]
@@ -170,8 +176,8 @@ def test_export_pipeline_copy_mode(load_script_module, monkeypatch, tmp_path):
     assert yolo_calls[0]["export_media"] is True
 
 
-def test_augment_samples_returns_early_when_no_samples(load_script_module):
-    mod = load_script_module("dataset_manager.py")
+def test_augment_samples_returns_early_when_no_samples(dataset_manager_module):
+    mod = dataset_manager_module
 
     class EmptyDataset:
         name = "demo"
@@ -184,8 +190,8 @@ def test_augment_samples_returns_early_when_no_samples(load_script_module):
     assert result is dataset
 
 
-def test_load_or_create_dataset_uses_existing_dataset(load_script_module, monkeypatch):
-    mod = load_script_module("dataset_manager.py")
+def test_load_or_create_dataset_uses_existing_dataset(dataset_manager_module, monkeypatch):
+    mod = dataset_manager_module
 
     sentinel = object()
     monkeypatch.setattr(mod.fo, "list_datasets", lambda: ["my_ds"])
@@ -195,8 +201,8 @@ def test_load_or_create_dataset_uses_existing_dataset(load_script_module, monkey
     assert result is sentinel
 
 
-def test_load_or_create_dataset_triggers_split_when_missing_tags(load_script_module, monkeypatch):
-    mod = load_script_module("dataset_manager.py")
+def test_load_or_create_dataset_triggers_split_when_missing_tags(dataset_manager_module, monkeypatch):
+    mod = dataset_manager_module
 
     ds = _SplitDataset(counts={})
     calls = {}

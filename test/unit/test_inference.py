@@ -1,3 +1,4 @@
+import importlib
 import sys
 import types
 from pathlib import Path
@@ -60,7 +61,7 @@ def _make_fake_rfdetr_module():
 
 
 @pytest.fixture
-def inference_module(load_script_module, monkeypatch):
+def inference_module(monkeypatch):
     fake_ultralytics = types.ModuleType("ultralytics")
     fake_ultralytics.YOLO = object
 
@@ -68,7 +69,8 @@ def inference_module(load_script_module, monkeypatch):
     monkeypatch.setitem(sys.modules, "supervision", _make_fake_supervision_module())
     monkeypatch.setitem(sys.modules, "rfdetr", _make_fake_rfdetr_module())
 
-    return load_script_module("inference.py")
+    mod = importlib.import_module("src.od_training.infer.runner")
+    return importlib.reload(mod)
 
 
 def test_load_rfdetr_model_known_key(inference_module):

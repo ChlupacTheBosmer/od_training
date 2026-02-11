@@ -4,13 +4,13 @@ import types
 
 import pytest
 
+from src.od_training.utility import roboflow_upload as mod
+
 
 pytestmark = pytest.mark.unit
 
 
-def test_upload_weights_missing_file(load_script_module):
-    mod = load_script_module("upload_weights.py")
-
+def test_upload_weights_missing_file():
     with pytest.raises(FileNotFoundError):
         mod.upload_weights(
             api_key="key",
@@ -21,9 +21,7 @@ def test_upload_weights_missing_file(load_script_module):
         )
 
 
-def test_upload_weights_empty_file(load_script_module, tmp_path):
-    mod = load_script_module("upload_weights.py")
-
+def test_upload_weights_empty_file(tmp_path):
     empty = tmp_path / "empty.pt"
     empty.write_bytes(b"")
 
@@ -37,9 +35,7 @@ def test_upload_weights_empty_file(load_script_module, tmp_path):
         )
 
 
-def test_upload_weights_import_error_for_roboflow(load_script_module, monkeypatch, tmp_path):
-    mod = load_script_module("upload_weights.py")
-
+def test_upload_weights_import_error_for_roboflow(monkeypatch, tmp_path):
     weights = tmp_path / "model.pt"
     weights.write_bytes(b"abc")
 
@@ -62,9 +58,7 @@ def test_upload_weights_import_error_for_roboflow(load_script_module, monkeypatc
         )
 
 
-def test_upload_weights_success(load_script_module, monkeypatch, tmp_path):
-    mod = load_script_module("upload_weights.py")
-
+def test_upload_weights_success(monkeypatch, tmp_path):
     weights = tmp_path / "model.pt"
     weights.write_bytes(b"abc")
 
@@ -112,9 +106,7 @@ def test_upload_weights_success(load_script_module, monkeypatch, tmp_path):
     assert calls["deploy"] == ("rf-detr", str(weights))
 
 
-def test_upload_weights_deploy_failure_propagates(load_script_module, monkeypatch, tmp_path):
-    mod = load_script_module("upload_weights.py")
-
+def test_upload_weights_deploy_failure_propagates(monkeypatch, tmp_path):
     weights = tmp_path / "model.pt"
     weights.write_bytes(b"abc")
 

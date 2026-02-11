@@ -1,3 +1,4 @@
+import importlib
 import uuid
 from pathlib import Path
 
@@ -9,7 +10,6 @@ pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
 def test_yolo_one_process_export_train_infer(
     require_model_smoke,
-    load_script_module,
     make_yolo_dataset,
     monkeypatch,
     repo_root,
@@ -17,6 +17,9 @@ def test_yolo_one_process_export_train_infer(
 ):
     pytest.importorskip("ultralytics")
     fo = pytest.importorskip("fiftyone")
+    dataset_manager = importlib.import_module("src.od_training.dataset.manager")
+    train_yolo_mod = importlib.import_module("src.od_training.train.yolo")
+    inference_mod = importlib.import_module("src.od_training.infer.runner")
 
     runtime_tmp = tmp_path / "runtime_tmp"
     runtime_tmp.mkdir(parents=True, exist_ok=True)
@@ -27,9 +30,6 @@ def test_yolo_one_process_export_train_infer(
     monkeypatch.setenv("CLEARML_OFFLINE_MODE", "1")
     monkeypatch.setenv("MPLCONFIGDIR", str(runtime_tmp / "mpl"))
 
-    dataset_manager = load_script_module("dataset_manager.py")
-    train_yolo_mod = load_script_module("train_yolo.py")
-    inference_mod = load_script_module("inference.py")
     monkeypatch.setattr(train_yolo_mod.Task, "init", lambda **_: object())
 
     local_weights = repo_root / "yolo11n.pt"

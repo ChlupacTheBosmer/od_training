@@ -1,15 +1,15 @@
 import uuid
 from pathlib import Path
 
+import importlib
 import pytest
-
 
 pytestmark = [pytest.mark.integration]
 
 
-def test_dataset_export_pipeline_smoke(load_script_module, make_yolo_dataset, tmp_path):
+def test_dataset_export_pipeline_smoke(make_yolo_dataset, tmp_path):
     fo = pytest.importorskip("fiftyone")
-    mod = load_script_module("dataset_manager.py")
+    dataset_manager = importlib.import_module("src.od_training.dataset.manager")
 
     dataset_name = f"it_export_{uuid.uuid4().hex[:8]}"
     aug_name = f"it_export_aug_{uuid.uuid4().hex[:8]}"
@@ -18,14 +18,14 @@ def test_dataset_export_pipeline_smoke(load_script_module, make_yolo_dataset, tm
     export_dir = tmp_path / "exported"
 
     try:
-        ds = mod.load_or_create_dataset(str(dataset_dir / "data.yaml"), dataset_name)
+        ds = dataset_manager.load_or_create_dataset(str(dataset_dir / "data.yaml"), dataset_name)
 
         # Ensure deterministic split tags for this tiny fixture
         s = ds.first()
         s.tags = ["train"]
         s.save()
 
-        aug_ds = mod.augment_samples(
+        aug_ds = dataset_manager.augment_samples(
             ds,
             filter_tags=["train"],
             new_dataset_name=aug_name,
@@ -33,7 +33,7 @@ def test_dataset_export_pipeline_smoke(load_script_module, make_yolo_dataset, tm
         )
 
         classes = aug_ds.default_classes or aug_ds.distinct("ground_truth.detections.label")
-        mod.export_pipeline(
+        dataset_manager.export_pipeline(
             aug_ds,
             str(export_dir),
             classes=classes,
