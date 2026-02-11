@@ -14,6 +14,7 @@ Use this protocol when an agent touches the repository for the first time.
 2. Confirm high-level map:
 - CLI dispatch: `src/od_training/cli/main.py`
 - Feature modules: `src/od_training/{dataset,train,infer,utility}`
+- External references policy: `external/README.md` (reference-only clones; not dependencies)
 
 ## Phase B: Environment Sanity
 

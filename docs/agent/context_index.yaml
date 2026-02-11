@@ -81,6 +81,14 @@ data_and_outputs:
   implication: >-
     Tests and scripts may depend on runtime artifacts in these paths; do not assume tracked fixture permanence.
 
+external_references:
+  policy_doc: external/README.md
+  purpose: local upstream reference clones for code/docs inspection
+  constraints:
+    - never import from external/ in runtime code or tests
+    - refresh with scripts/sync_external_refs.sh --pull before deep behavior comparison
+    - when citing upstream behavior, include commit SHA in notes/docs
+
 key_behavior_invariants:
   - unified_cli_groups: [dataset, train, infer, utility]
   - dataset_export_default: symlink mode (copy only with --copy-images)

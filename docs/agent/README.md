@@ -32,6 +32,7 @@ This folder is the agent-first launchpad. It does not duplicate full project doc
 - Use `docs/dev/progress.md` for change chronology.
 - Treat `docs/dev/audit_report.md`, `docs/dev/discovery.md`, and `docs/dev/research.md` as historical/supporting context.
 - Use `docs/src/*` for module-level reference snapshots.
+- `external/` holds local clones for upstream code inspection only; policy and repo list live in `external/README.md`.
 
 ## Compatibility Layer Warning
 

@@ -20,5 +20,7 @@ runs/
 *.onnx
 output/
 
-# External References (Not tracked)
-external/
+# External references
+# Keep external clones ignored, but allow a tracked instruction file.
+external/*
+!external/README.md

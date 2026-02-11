@@ -23,6 +23,7 @@ This file classifies documentation by trust level and usage intent.
 | `docs/dev/discovery.md` | L3 | Discovery decisions and constraints | Use to understand historical intent |
 | `docs/dev/audit_report.md` | L3 | 2026-02-11 audit snapshot | Treat as historical snapshot |
 | `docs/context/main.md` | L3 | Full historical context thread | Optional deep context when blocked |
+| `external/README.md` | L2 | External reference repo policy and sync source list | Follow for upstream code inspection only; never treat as runtime dependency |
 
 ## Documentation Consumption Strategy
 

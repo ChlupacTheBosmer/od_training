@@ -72,3 +72,8 @@ These paths are runtime artifacts and are gitignored:
 Implications:
 - Do not rely on persistent tracked contents there.
 - Scripts/tests may create transient artifacts in those locations.
+
+`external/` specific rules:
+- Purpose is local reference clones for reading upstream code/docs.
+- Never import from `external/` in runtime code or tests.
+- If using an external repo as behavioral evidence, record its commit SHA.
