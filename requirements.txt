@@ -8,7 +8,7 @@ rfdetr[metrics]
 
 # Data & Utilities
 roboflow
-globox>=3.0
+globox
 supervision>=0.18
 python-dotenv
 
@@ -18,3 +18,6 @@ clearml>=1.10
 # Dataset Management & Augmentation
 fiftyone>=0.23
 albumentations>=1.3
+
+# Testing
+pytest>=8.0

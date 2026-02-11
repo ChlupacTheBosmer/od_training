@@ -90,7 +90,7 @@ def load_or_create_dataset(dataset_dir, name, split_ratios=None, train_tag="trai
 # =============================================================================
 # AUGMENTATION LOGIC
 # =============================================================================
-def augment_samples(dataset, filter_tags=None, new_dataset_name=None, num_aug=1):
+def augment_samples(dataset, filter_tags=None, new_dataset_name=None, output_dir=None, num_aug=1):
     """
     Apply augmentations to samples matching `filter_tags`.
     If `filter_tags` is None, augment ALL samples.
@@ -135,7 +135,10 @@ def augment_samples(dataset, filter_tags=None, new_dataset_name=None, num_aug=1)
             dest_dataset.persistent = True # Make sure it stays
 
     # Define storage for augmented images
-    aug_dir = os.path.join("data", "augmented", dest_dataset.name)
+    if output_dir:
+        aug_dir = output_dir
+    else:
+        aug_dir = os.path.join("data", "augmented", dest_dataset.name)
     os.makedirs(aug_dir, exist_ok=True)
     
     transform = get_augmentation_pipeline()
@@ -345,6 +348,7 @@ if __name__ == "__main__":
     parser.add_argument("--augment", action="store_true", help="Run augmentation")
     parser.add_argument("--augment-tags", nargs='+', help="List of tags to augment (e.g. 'train'). If empty, augments ALL.")
     parser.add_argument("--output-dataset", type=str, help="Name of destination dataset for augmented samples. Default: Same.")
+    parser.add_argument("--output-dir", type=str, help="Directory to save augmented images. Default: data/augmented/<dataset_name>")
     
     # Export
     parser.add_argument("--export-dir", type=str, help="Directory to export final dataset")
@@ -378,7 +382,8 @@ if __name__ == "__main__":
         dataset = augment_samples(
             dataset, 
             filter_tags=args.augment_tags, 
-            new_dataset_name=args.output_dataset, 
+            new_dataset_name=args.output_dataset,
+            output_dir=args.output_dir, 
             num_aug=1
         )
         

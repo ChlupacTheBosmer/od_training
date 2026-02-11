@@ -38,3 +38,6 @@ All audit fixes implemented in a single pass across 5 severity phases.
 ### Low Severity / Structural
 - [x] Removed unused imports (`shutil`, `yaml`, `foz`, `np`, `Path`) from `dataset_manager.py` and `train_rfdetr.py`.
 - [x] Hardened `sys.path` with `Path(__file__).resolve().parent.parent` in both training scripts.
+
+## Phase 6: Feature Enhancements
+- [x] `dataset_manager.py`: Added `--output-dir` argument to allow saving augmented images to a custom location. Default remains `data/augmented/<dataset_name>`.
