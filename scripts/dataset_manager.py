@@ -1,5 +1,7 @@
 import argparse
 import json
+import sys
+from pathlib import Path
 import fiftyone as fo
 import fiftyone.utils.random as four
 import albumentations as A
@@ -8,6 +10,12 @@ import os
 from collections import Counter
 from tqdm import tqdm
 import warnings
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.runtime_config import ensure_local_config
+
+ensure_local_config()
 
 # Suppress Albumentations version check warning (SSL/Network issues)
 warnings.filterwarnings("ignore", category=UserWarning, module="albumentations")

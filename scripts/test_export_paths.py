@@ -1,5 +1,13 @@
 import fiftyone as fo
 import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.runtime_config import ensure_local_config
+
+ensure_local_config()
 
 def test_export():
     # Load dummy dataset

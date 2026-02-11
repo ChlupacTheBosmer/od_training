@@ -1,10 +1,17 @@
 import argparse
 import os
+import sys
 import cv2
 import supervision as sv
 from pathlib import Path
 import numpy as np
 from typing import Union, List
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.runtime_config import ensure_local_config
+
+ensure_local_config()
 
 # Import models
 from ultralytics import YOLO
@@ -234,4 +241,3 @@ if __name__ == "__main__":
         show=args.show,
         save_dir=args.save_dir,
     )
-

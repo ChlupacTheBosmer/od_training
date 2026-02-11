@@ -1,10 +1,13 @@
 import argparse
 import sys
-import os
 from pathlib import Path
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.runtime_config import ensure_local_config
+
+ensure_local_config()
 
 from src.converters import convert_yolo_to_coco, convert_coco_to_yolo, validate_dataset
 

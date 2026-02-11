@@ -1,14 +1,25 @@
 """Upload trained weights to Roboflow.
 
-Supports API key from ``--api-key`` CLI arg **or** the ``ROBOFLOW_API_KEY``
-environment variable.  Pre-flight checks verify the weights file exists before
-attempting to authenticate.
+Supports API key via local config file (``config/local_config.json``) or an
+explicit ``--api-key`` override. Pre-flight checks verify the weights file
+exists before attempting to authenticate.
 """
 
 import argparse
-import os
 import logging
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.runtime_config import (
+    ensure_local_config,
+    get_config_path,
+    get_roboflow_api_key,
+    get_roboflow_default,
+)
+
+ensure_local_config()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -72,10 +83,18 @@ if __name__ == "__main__":
     parser.add_argument(
         "--api-key",
         default=None,
-        help="Roboflow API Key (falls back to ROBOFLOW_API_KEY env var)",
+        help="Roboflow API Key. If omitted, value is loaded from local config.",
     )
-    parser.add_argument("--workspace", required=True, help="Roboflow Workspace ID")
-    parser.add_argument("--project", required=True, help="Roboflow Project ID")
+    parser.add_argument(
+        "--workspace",
+        required=False,
+        help="Roboflow Workspace ID (falls back to local config)",
+    )
+    parser.add_argument(
+        "--project",
+        required=False,
+        help="Roboflow Project ID (falls back to local config)",
+    )
     parser.add_argument("--version", type=int, required=True, help="Dataset Version Number")
     parser.add_argument("--weights", required=True, help="Path to weights file (.pt)")
     parser.add_argument(
@@ -86,17 +105,29 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Resolve API key: CLI arg > env var
-    api_key = args.api_key or os.environ.get("ROBOFLOW_API_KEY")
-    if not api_key:
+    try:
+        api_key = get_roboflow_api_key(args.api_key)
+    except ValueError as e:
+        parser.error(str(e))
+
+    workspace = args.workspace or get_roboflow_default("workspace")
+    project = args.project or get_roboflow_default("project")
+
+    if not workspace:
         parser.error(
-            "API key required. Provide --api-key or set ROBOFLOW_API_KEY env var."
+            "Workspace is required. Provide --workspace or set roboflow.workspace "
+            f"in {get_config_path()}"
+        )
+    if not project:
+        parser.error(
+            "Project is required. Provide --project or set roboflow.project "
+            f"in {get_config_path()}"
         )
 
     upload_weights(
         api_key,
-        args.workspace,
-        args.project,
+        workspace,
+        project,
         args.version,
         args.weights,
         args.type,

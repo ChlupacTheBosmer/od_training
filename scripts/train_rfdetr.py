@@ -17,8 +17,11 @@ import logging
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from src.runtime_config import ensure_local_config
 from src.device_utils import resolve_device
 from src.cli_utils import parse_unknown_args
+
+ensure_local_config()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -155,4 +158,3 @@ if __name__ == "__main__":
         device=args.device,
         **kwargs,
     )
-

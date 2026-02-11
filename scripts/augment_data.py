@@ -1,3 +1,12 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.runtime_config import ensure_local_config
+
+ensure_local_config()
+
 import fiftyone as fo
 import fiftyone.zoo as foz
 import albumentations as A

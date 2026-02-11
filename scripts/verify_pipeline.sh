@@ -36,7 +36,12 @@ cleanup
 # ─── 1. Import + split + augment to separate dataset ────────────────────────
 echo ""
 echo "=== Step 1: Import, Split & Augment ==="
-source venv/bin/activate
+if [ -f "venv/bin/activate" ]; then
+    echo "Sourcing venv/bin/activate..."
+    source venv/bin/activate
+else
+    echo "No venv found, assuming environment is already set up."
+fi
 
 python scripts/dataset_manager.py \
     --dataset-dir data/dummy_yolo/data.yaml \

@@ -9,6 +9,7 @@ __pycache__/
 venv/
 env/
 .env
+config/local_config.json
 
 # Data & Models
 data/
