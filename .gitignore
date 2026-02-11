@@ -4,6 +4,7 @@
 .vscode/
 __pycache__/
 *.pyc
+*log.txt
 
 # Python
 venv/
@@ -16,6 +17,7 @@ config/local_config.json
 data/
 runs/
 *.pt
+*.pth
 *.engine
 *.onnx
 output/
