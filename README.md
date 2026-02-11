@@ -42,6 +42,7 @@ Top-level dispatch lives in `src/od_training/cli/main.py`.
 - `src/od_training/infer/`: inference runner
 - `src/od_training/utility/`: runtime config, env checks, Roboflow helpers
 - `docs/CLI.md`: command reference
+- `docs/agent/`: AI-agent onboarding context pack
 - `docs/dev/`: developer notes (`status`, `progress`, research/history)
 - `docs/src/`: per-module documentation snapshots
 - `test/`: unit/integration tests

@@ -1,0 +1,104 @@
+agent_context_version: 1
+last_curated: 2026-02-11
+repo_identity:
+  name: od_training
+  type: personal utility toolbox (non-published package)
+  primary_domain: object detection training workflows
+
+canonical_docs:
+  current_state:
+    - path: docs/dev/status.md
+      role: authoritative implementation status
+    - path: docs/dev/progress.md
+      role: dated change log
+  operational:
+    - path: README.md
+      role: root navigation + common commands
+    - path: docs/CLI.md
+      role: command surface and argument contracts
+  module_reference:
+    - path: docs/src/README.md
+      role: API docs index
+    - path: docs/src/
+      role: module-level documentation snapshots
+  historical_support:
+    - path: docs/dev/audit_report.md
+      role: point-in-time audit snapshot
+    - path: docs/dev/discovery.md
+      role: discovery decisions and constraints log
+    - path: docs/dev/research.md
+      role: curated technical research backing
+    - path: docs/dev/training_cookbook.md
+      role: methodology guidance for training workflows
+  conversation_archive:
+    - path: docs/context/main.md
+      role: long-form historical task context (optional)
+
+entrypoints:
+  cli:
+    path: scripts/odt.py
+    dispatch: src/od_training/cli/main.py
+  smoke_script:
+    path: scripts/verify_pipeline.sh
+
+code_map:
+  dataset:
+    - src/od_training/dataset/manager.py
+    - src/od_training/dataset/convert.py
+    - src/od_training/dataset/convert_cli.py
+    - src/od_training/dataset/view.py
+    - src/od_training/dataset/augment_preview.py
+  training:
+    - src/od_training/train/yolo.py
+    - src/od_training/train/rfdetr.py
+  inference:
+    - src/od_training/infer/runner.py
+  utilities:
+    - src/od_training/utility/runtime_config.py
+    - src/od_training/utility/verify_env.py
+    - src/od_training/utility/roboflow_download.py
+    - src/od_training/utility/roboflow_upload.py
+    - src/od_training/utility/device.py
+    - src/od_training/utility/cli.py
+
+compatibility_layers:
+  note: >-
+    Legacy modules in src/ mirror active logic in src/od_training/. Keep behavior in sync
+    when changing shared contracts.
+  paths:
+    - src/runtime_config.py
+    - src/cli_utils.py
+    - src/device_utils.py
+    - src/converters.py
+
+data_and_outputs:
+  gitignored_runtime_paths:
+    - data/
+    - runs/
+    - output/
+    - external/
+    - config/local_config.json
+  implication: >-
+    Tests and scripts may depend on runtime artifacts in these paths; do not assume tracked fixture permanence.
+
+key_behavior_invariants:
+  - unified_cli_groups: [dataset, train, infer, utility]
+  - dataset_export_default: symlink mode (copy only with --copy-images)
+  - runtime_config_priority: CLI args > local config > environment variables
+  - function_docstrings_required: true
+  - preferred_edit_target: src/od_training/*
+
+testing:
+  framework: pytest
+  config: pytest.ini
+  markers: [unit, integration, slow, gpu]
+  useful_commands:
+    - pytest -m unit
+    - pytest -m integration
+    - pytest
+
+doc_update_rules:
+  - if_cli_surface_changes: update docs/CLI.md
+  - if_module_contract_changes: update docs/src corresponding module docs
+  - if_repo_state_changes_materially: update docs/dev/status.md and docs/dev/progress.md
+  - if_new_agent_relevant_invariant_added: update docs/agent/context_index.yaml and docs/agent/engineering_contract.md
