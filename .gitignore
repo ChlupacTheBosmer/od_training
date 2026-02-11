@@ -10,6 +10,7 @@ venv/
 env/
 .env
 config/local_config.json
+.pytest_cache/
 
 # Data & Models
 data/
