@@ -7,7 +7,10 @@ from clearml import Task
 import logging
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.device_utils import resolve_device
+from src.cli_utils import parse_unknown_args
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -78,40 +81,16 @@ if __name__ == "__main__":
     
     # Advanced: Parse unknown args to allow full kwargs support
     args, unknown = parser.parse_known_args()
-    
-    # Convert unknown args list to dict
-    # Expected format: --arg value or --bool_arg
-    kwargs = {}
-    i = 0
-    while i < len(unknown):
-        key = unknown[i]
-        if key.startswith("--"):
-            key = key[2:]
-            if i + 1 < len(unknown) and not unknown[i + 1].startswith("--"):
-                value = unknown[i + 1]
-                # Try to convert to int/float if possible
-                try:
-                    if "." in value: value = float(value)
-                    else: value = int(value)
-                except ValueError:
-                    pass # Keep as string
-                kwargs[key] = value
-                i += 2
-            else:
-                # Boolean flag assumed True
-                kwargs[key] = True
-                i += 1
-        else:
-            i += 1
-            
-    # Combine explicit args with kwargs
-    # Note: explicit args take precedence in the function call, but we pass them as kwargs to keep signature clean
+    kwargs = parse_unknown_args(unknown)
+
+    # Combine explicit args with kwargs (explicit args take precedence)
     train_args = {
         "epochs": args.epochs,
         "batch": args.batch,
         "imgsz": args.imgsz,
-        "device": args.device,
-        **kwargs # Merge dynamic args
+        "device": resolve_device(args.device),
+        **kwargs,
     }
-    
+
     train_yolo(args.model, args.data, args.project, args.name, **train_args)
+

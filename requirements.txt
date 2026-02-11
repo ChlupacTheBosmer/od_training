@@ -1,20 +1,20 @@
 # Core Compatibility Pins
-numpy<2.0.0
-pydantic>=2.0.0
+numpy>=1.23.5,<2.0.0
+pydantic>=1.10,<3.0.0
 
 # Model Frameworks
-ultralytics
+ultralytics>=8.0
 rfdetr[metrics]
 
 # Data & Utilities
 roboflow
-globox
-supervision
+globox>=3.0
+supervision>=0.18
 python-dotenv
 
 # Experiment Tracking
-clearml
+clearml>=1.10
 
-# Inference & Augmentation
-fiftyone
-albumentations
+# Dataset Management & Augmentation
+fiftyone>=0.23
+albumentations>=1.3

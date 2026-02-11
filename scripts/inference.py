@@ -20,21 +20,20 @@ try:
         RFDETRBase
     )
     RFDETR_AVAILABLE = True
+    RFDETR_MAP = {
+        "rfdetr_nano": RFDETRNano,
+        "rfdetr_small": RFDETRSmall,
+        "rfdetr_medium": RFDETRMedium,
+        "rfdetr_large": RFDETRLarge,
+        "rfdetr_xlarge": RFDETRXLarge,
+        "rfdetr_2xlarge": RFDETR2XLarge,
+        "rf-detr-resnet50": RFDETRMedium,
+        "rf-detr-base": RFDETRBase,
+    }
 except ImportError:
     RFDETR_AVAILABLE = False
+    RFDETR_MAP = {}
     print("Warning: RF-DETR not found or imports failed. RF-DETR inference will not be available.")
-
-# RF-DETR Model Map
-RFDETR_MAP = {
-    "rfdetr_nano": RFDETRNano,
-    "rfdetr_small": RFDETRSmall,
-    "rfdetr_medium": RFDETRMedium,
-    "rfdetr_large": RFDETRLarge,
-    "rfdetr_xlarge": RFDETRXLarge,
-    "rfdetr_2xlarge": RFDETR2XLarge,
-    "rf-detr-resnet50": RFDETRMedium,
-    "rf-detr-base": RFDETRBase
-}
 
 def load_rfdetr_model(model_name: str, rfdetr_arch: str = None):
     """
@@ -87,7 +86,7 @@ def run_inference(
     conf_threshold: float = 0.3,
     iou_threshold: float = 0.5,
     show: bool = False,
-    save_dir: str = None
+    save_dir: str = None,
 ):
     # Load Model
     if model_type.lower() == 'yolo':
@@ -104,10 +103,12 @@ def run_inference(
 
     # Handle Source
     source_path = Path(source)
-    
+
     frame_generator = None
     is_video = False
-    
+    source_fps = 30  # default, overridden for video sources
+    image_filenames = []  # track original filenames for directory mode
+
     if source == '0' or source.startswith('rtsp'):
         is_video = True
         frame_generator = sv.get_video_frames_generator(source)
@@ -116,21 +117,32 @@ def run_inference(
         if ext in ['.mp4', '.avi', '.mov', '.mkv']:
             is_video = True
             frame_generator = sv.get_video_frames_generator(source)
+            # Read FPS from source
+            cap = cv2.VideoCapture(source)
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            if fps and fps > 0:
+                source_fps = fps
+            cap.release()
         elif ext in ['.jpg', '.jpeg', '.png', '.bmp']:
-            # Signal simple image processing
             frame = cv2.imread(source)
             if frame is None:
                 raise ValueError(f"Could not read image: {source}")
             frame_generator = iter([frame])
+            image_filenames = [source_path.stem]
     elif source_path.is_dir():
          exclude_files = ['.DS_Store']
-         image_files = [p for p in source_path.glob('*') if p.suffix.lower() in ['.jpg', '.jpeg', '.png'] and p.name not in exclude_files]
+         image_files = sorted(
+             p for p in source_path.glob('*')
+             if p.suffix.lower() in ['.jpg', '.jpeg', '.png'] and p.name not in exclude_files
+         )
          if not image_files:
              print(f"No images found in {source_path}")
              return
-             
+
+         image_filenames = [p.stem for p in image_files]
+
          def dir_gen():
-             for p in sorted(image_files):
+             for p in image_files:
                  f = cv2.imread(str(p))
                  if f is not None:
                      yield f
@@ -178,10 +190,18 @@ def run_inference(
                  if video_writer is None:
                      h, w = frame.shape[:2]
                      out_path = os.path.join(save_dir, "output_video.mp4")
-                     video_writer = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*'mp4v'), 30, (w, h))
+                     video_writer = cv2.VideoWriter(
+                         out_path, cv2.VideoWriter_fourcc(*'mp4v'),
+                         source_fps, (w, h),
+                     )
                  video_writer.write(annotated_frame)
             else:
-                out_path = os.path.join(save_dir, f"frame_{i:04d}.jpg")
+                # Use original filename with _annotated suffix
+                if i < len(image_filenames):
+                    fname = f"{image_filenames[i]}_annotated.jpg"
+                else:
+                    fname = f"frame_{i:04d}.jpg"
+                out_path = os.path.join(save_dir, fname)
                 cv2.imwrite(out_path, annotated_frame)
 
     if video_writer:
@@ -200,10 +220,10 @@ if __name__ == "__main__":
     parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.5, help="IoU threshold (for NMS)")
     parser.add_argument("--show", action="store_true", help="Display results in window")
-    parser.add_argument("--save-dir", type=str, default="runs/inference", help="Directory to save results")
-    
+    parser.add_argument("--save-dir", type=str, default=None, help="Directory to save results (default: no saving)")
+
     args = parser.parse_args()
-    
+
     run_inference(
         source=args.source,
         model_name=args.model,
@@ -212,5 +232,6 @@ if __name__ == "__main__":
         conf_threshold=args.conf,
         iou_threshold=args.iou,
         show=args.show,
-        save_dir=args.save_dir
+        save_dir=args.save_dir,
     )
+

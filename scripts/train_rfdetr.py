@@ -1,7 +1,6 @@
 import argparse
 import sys
 import os
-import shutil
 from pathlib import Path
 from rfdetr import (
     RFDETRNano,
@@ -16,7 +15,10 @@ from clearml import Task
 import logging
 
 # Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.device_utils import resolve_device
+from src.cli_utils import parse_unknown_args
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -32,7 +34,17 @@ MODEL_MAP = {
     "rf-detr-base": RFDETRBase
 }
 
-def train_rfdetr(dataset_dir: str, model_type: str, epochs: int, batch_size: int, lr: float, project_name: str, exp_name: str, **kwargs):
+def train_rfdetr(
+    dataset_dir: str,
+    model_type: str,
+    epochs: int,
+    batch_size: int,
+    lr: float,
+    project_name: str,
+    exp_name: str,
+    device: str = None,
+    **kwargs,
+):
     """
     Trains RF-DETR on a local COCO dataset.
     """
@@ -73,9 +85,9 @@ def train_rfdetr(dataset_dir: str, model_type: str, epochs: int, batch_size: int
         "epochs": epochs,
         "batch_size": batch_size,
         "learning_rate": lr,
-        "device": "cuda" if os.environ.get("CUDA_VISIBLE_DEVICES") else "cpu",
-        "tensorboard": True, # Force enable native logging
-        "wandb": True,       # Force enable native logging if installed
+        "device": resolve_device(device),
+        "tensorboard": True,
+        "wandb": True,
     }
     train_args.update(kwargs)
     
@@ -85,9 +97,27 @@ def train_rfdetr(dataset_dir: str, model_type: str, epochs: int, batch_size: int
         model.train(**train_args)
     except FileNotFoundError as e:
         if "checkpoint_best_regular.pth" in str(e):
-            logger.warning("Training finished but failed to copy 'best' checkpoint (likely due to short run). Ignoring error.")
+            logger.warning(
+                "Training finished but failed to copy 'best' checkpoint "
+                "(likely due to short run). Checking for other checkpoints..."
+            )
+            # Verify that at least one checkpoint was actually produced
+            output_dir = train_args.get("output_dir", ".")
+            checkpoints = list(Path(output_dir).rglob("*.pth"))
+            if not checkpoints:
+                logger.error(
+                    "No .pth checkpoints found in output directory '%s'. "
+                    "Training may have failed entirely.",
+                    output_dir,
+                )
+                raise
+            logger.info(
+                "Found %d checkpoint(s): %s",
+                len(checkpoints),
+                [str(p.name) for p in checkpoints],
+            )
         else:
-            raise e
+            raise
     except Exception as e:
         logger.error(f"Training failed: {e}")
         raise
@@ -109,31 +139,20 @@ if __name__ == "__main__":
     parser.add_argument("--name", type=str, default="exp")
     
     # Advanced args
-    args, unknown = parser.parse_known_args()
+    parser.add_argument("--device", type=str, default=None, help="Device to train on (e.g. cuda, cuda:0, cpu). Auto-detected if not set.")
     
-    # Parse kwargs similar to YOLO script
-    kwargs = {}
-    i = 0
-    while i < len(unknown):
-        key = unknown[i]
-        if key.startswith("--"):
-            key = key[2:]
-            if i + 1 < len(unknown) and not unknown[i + 1].startswith("--"):
-                kwargs[key] = unknown[i+1] # Keep as string/auto-convert inside rfdetr if needed
-                i += 2
-            else:
-                kwargs[key] = True
-                i += 1
-        else:
-            i += 1
+    args, unknown = parser.parse_known_args()
+    kwargs = parse_unknown_args(unknown)
 
     train_rfdetr(
-        args.dataset, 
-        args.model, 
-        args.epochs, 
-        args.batch, 
-        args.lr, 
-        args.project, 
-        args.name, 
-        **kwargs
+        args.dataset,
+        args.model,
+        args.epochs,
+        args.batch,
+        args.lr,
+        args.project,
+        args.name,
+        device=args.device,
+        **kwargs,
     )
+
