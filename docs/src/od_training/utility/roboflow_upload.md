@@ -30,10 +30,10 @@ Raises:
 
 Defines CLI args:
 
-- `--api-key`, `--workspace`, `--project`, `--version`, `--weights`, `--type`
+- `--config`, `--api-key`, `--workspace`, `--project`, `--version`, `--weights`, `--type`
 
 ### `main(argv=None)`
 
-Resolves credentials and defaults via runtime config helpers, validates required workspace/project values, then calls `upload_weights`.
+Resolves credentials and defaults via runtime config helpers (including optional `--config` override), validates required workspace/project values, then calls `upload_weights`.
 
 Returns `0` on success.

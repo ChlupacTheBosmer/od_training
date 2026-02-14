@@ -5,7 +5,8 @@ This contract defines repository-specific standards that agents must follow.
 ## 1. Architectural Contract
 
 - Primary code namespace is `src/od_training/`.
-- Unified CLI entrypoint is `scripts/odt.py`.
+- Unified CLI entrypoint is `odt` (packaged console script).
+- `scripts/odt.py` is a compatibility wrapper around installed package entrypoint.
 - CLI dispatch map is in `src/od_training/cli/main.py`.
 - Preferred implementation target: modules under `src/od_training/*`.
 
@@ -23,7 +24,9 @@ Rule:
 ## 3. Configuration Contract
 
 Runtime config path:
-- `config/local_config.json` (gitignored)
+- `ODT_CONFIG_PATH` (if set)
+- repo-local `config/local_config.json` (if present; gitignored)
+- `~/.config/od_training/local_config.json`
 
 Resolution order (must remain stable unless intentionally changed):
 1. CLI argument
@@ -31,6 +34,7 @@ Resolution order (must remain stable unless intentionally changed):
 3. environment variable
 
 Current env vars:
+- `ODT_CONFIG_PATH`
 - `ROBOFLOW_API_KEY`
 - `ROBOFLOW_WORKSPACE`
 - `ROBOFLOW_PROJECT`
@@ -41,12 +45,17 @@ Current env vars:
 - Default export mode is symlink-based zero-copy behavior.
 - Portable export is opt-in via `--copy-images`.
 - COCO sidecar export per split is expected where pipeline uses hybrid output.
+- Detection field selection must stay configurable via `--label-field`.
+- Training commands run dataset preflight validation by default:
+  - `odt train yolo` validates YOLO split structure from `data.yaml`
+  - `odt train rfdetr` validates RF-DETR split contract
+- Opt-out remains explicit via `--no-validate-data`.
 
 ## 5. CLI Contract
 
 When adding/changing commands:
 - Update dispatch map in `src/od_training/cli/main.py`.
-- Keep `scripts/odt.py` wrapper behavior unchanged unless absolutely necessary.
+- Keep packaged `odt` behavior and `scripts/odt.py` compatibility aligned.
 - Update `docs/CLI.md` in same change set.
 
 ## 6. Testing Contract

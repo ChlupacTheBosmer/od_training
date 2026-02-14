@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from src.device_utils import resolve_device
+from od_training.utility.device import resolve_device
 
 
 pytestmark = pytest.mark.unit

@@ -1,6 +1,6 @@
 import pytest
 
-from src.od_training.dataset import convert_cli as mod
+from od_training.dataset import convert_cli as mod
 
 pytestmark = pytest.mark.unit
 

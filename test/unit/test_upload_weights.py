@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from src.od_training.utility import roboflow_upload as mod
+from od_training.utility import roboflow_upload as mod
 
 
 pytestmark = pytest.mark.unit

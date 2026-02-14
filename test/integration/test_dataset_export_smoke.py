@@ -9,7 +9,7 @@ pytestmark = [pytest.mark.integration]
 
 def test_dataset_export_pipeline_smoke(make_yolo_dataset, tmp_path):
     fo = pytest.importorskip("fiftyone")
-    dataset_manager = importlib.import_module("src.od_training.dataset.manager")
+    dataset_manager = importlib.import_module("od_training.dataset.manager")
 
     dataset_name = f"it_export_{uuid.uuid4().hex[:8]}"
     aug_name = f"it_export_aug_{uuid.uuid4().hex[:8]}"

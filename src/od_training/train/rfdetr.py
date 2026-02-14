@@ -16,11 +16,9 @@ from clearml import Task
 import logging
 
 
-from ..utility.runtime_config import ensure_local_config
 from ..utility.device import resolve_device
 from ..utility.cli import parse_unknown_args
-
-ensure_local_config()
+from .preflight import validate_rfdetr_training_inputs
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,6 +43,8 @@ def train_rfdetr(
     project_name: str,
     exp_name: str,
     device: str = None,
+    validate_data: bool = False,
+    fail_on_validation_warnings: bool = False,
     **kwargs,
 ):
     """Train RF-DETR on a local dataset with optional pass-through kwargs.
@@ -61,8 +61,21 @@ def train_rfdetr(
         project_name: Tracking/output project name.
         exp_name: Run name for tracking/output grouping.
         device: Optional explicit device override.
+        validate_data: If true, run dataset preflight validation first.
+        fail_on_validation_warnings: If true, warnings fail preflight.
         **kwargs: Additional RF-DETR ``model.train`` arguments.
     """
+    if validate_data:
+        preflight = validate_rfdetr_training_inputs(
+            dataset_dir=dataset_dir,
+            fail_on_warnings=fail_on_validation_warnings,
+        )
+        logger.info(
+            "RF-DETR preflight OK: splits=%s warnings=%d",
+            sorted(preflight.get("splits", {}).keys()),
+            len(preflight.get("warnings", [])),
+        )
+
     logger.info(f"Initializing ClearML Task: {project_name}/{exp_name}")
     try:
         task = Task.init(project_name=project_name, task_name=exp_name, output_uri=True)
@@ -155,6 +168,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--name", type=str, default="exp")
     
     parser.add_argument("--device", type=str, default=None, help="Device to train on (e.g. cuda, cuda:0, cpu). Auto-detected if not set.")
+    parser.add_argument(
+        "--no-validate-data",
+        action="store_true",
+        help="Skip dataset preflight validation before training.",
+    )
+    parser.add_argument(
+        "--fail-on-validation-warnings",
+        action="store_true",
+        help="Treat dataset preflight warnings as errors.",
+    )
     return parser
 
 
@@ -179,6 +202,8 @@ def main(argv=None) -> int:
         args.project,
         args.name,
         device=args.device,
+        validate_data=not args.no_validate_data,
+        fail_on_validation_warnings=args.fail_on_validation_warnings,
         **kwargs,
     )
     return 0

@@ -5,6 +5,7 @@
 ## Purpose
 
 Training package initializer exposing framework-specific train functions.
+Preflight validation helpers live in `src.od_training.train.preflight`.
 
 ## Exports
 

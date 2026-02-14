@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from src.od_training.dataset import manager as dataset_manager_mod
+from od_training.dataset import manager as dataset_manager_mod
 
 pytestmark = pytest.mark.unit
 
@@ -176,6 +176,33 @@ def test_export_pipeline_copy_mode(dataset_manager_module, monkeypatch, tmp_path
     assert yolo_calls[0]["export_media"] is True
 
 
+def test_export_pipeline_respects_label_field(dataset_manager_module, monkeypatch, tmp_path):
+    mod = dataset_manager_module
+
+    recorder = []
+    samples = [{"tags": ["train"]}]
+    dataset = _FakeDataset(samples, recorder)
+
+    monkeypatch.setattr(
+        mod.fo,
+        "types",
+        types.SimpleNamespace(YOLOv5Dataset="YOLO", COCODetectionDataset="COCO"),
+        raising=False,
+    )
+
+    mod.export_pipeline(
+        dataset,
+        str(tmp_path / "export"),
+        classes=["object"],
+        label_field="ls_corrections",
+    )
+
+    yolo_calls = [c for c in recorder if c.get("dataset_type") == "YOLO"]
+    coco_calls = [c for c in recorder if c.get("dataset_type") == "COCO"]
+    assert yolo_calls[0]["label_field"] == "ls_corrections"
+    assert coco_calls[0]["label_field"] == "ls_corrections"
+
+
 def test_augment_samples_returns_early_when_no_samples(dataset_manager_module):
     mod = dataset_manager_module
 
@@ -229,3 +256,114 @@ def test_load_or_create_dataset_triggers_split_when_missing_tags(dataset_manager
     assert calls["dataset"] is ds
     assert calls["mapping"] == {"tr": 0.7, "va": 0.2, "te": 0.1}
     assert ds.saved is True
+
+
+def test_main_uses_classes_field_override(dataset_manager_module, monkeypatch, tmp_path):
+    mod = dataset_manager_module
+    calls = {}
+
+    class _Dataset:
+        name = "demo"
+        default_classes = None
+
+        def distinct(self, field):
+            calls["distinct_field"] = field
+            return ["rodent"]
+
+    monkeypatch.setattr(mod, "load_or_create_dataset", lambda *args, **kwargs: _Dataset())
+
+    def fake_export_pipeline(dataset, export_dir, **kwargs):
+        calls["label_field"] = kwargs["label_field"]
+        calls["classes"] = kwargs["classes"]
+        calls["export_dir"] = export_dir
+
+    monkeypatch.setattr(mod, "export_pipeline", fake_export_pipeline)
+
+    rc = mod.main(
+        [
+            "--name",
+            "demo",
+            "--export-dir",
+            str(tmp_path / "out"),
+            "--label-field",
+            "ls_corrections",
+            "--classes-field",
+            "ls_corrections.detections.label",
+        ]
+    )
+
+    assert rc == 0
+    assert calls["distinct_field"] == "ls_corrections.detections.label"
+    assert calls["label_field"] == "ls_corrections"
+    assert calls["classes"] == ["rodent"]
+
+
+def test_main_export_raises_clear_error_for_missing_label_field(dataset_manager_module, monkeypatch, tmp_path):
+    mod = dataset_manager_module
+
+    class _Dataset:
+        name = "demo"
+        default_classes = None
+
+        def has_sample_field(self, field):
+            return field == "ground_truth"
+
+        def get_field_schema(self):
+            return {"ground_truth": object(), "predictions": object()}
+
+        def distinct(self, field):
+            return ["rodent"]
+
+    monkeypatch.setattr(mod, "load_or_create_dataset", lambda *args, **kwargs: _Dataset())
+    monkeypatch.setattr(
+        mod,
+        "export_pipeline",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("export should not be called")),
+    )
+
+    with pytest.raises(ValueError, match="Label field 'ls_corrections' was not found"):
+        mod.main(
+            [
+                "--name",
+                "demo",
+                "--export-dir",
+                str(tmp_path / "out"),
+                "--label-field",
+                "ls_corrections",
+            ]
+        )
+
+
+def test_main_export_raises_clear_error_for_invalid_classes_field(dataset_manager_module, monkeypatch, tmp_path):
+    mod = dataset_manager_module
+
+    class _Dataset:
+        name = "demo"
+        default_classes = None
+
+        def has_sample_field(self, field):
+            return field == "ground_truth"
+
+        def distinct(self, field):
+            raise RuntimeError("bad field")
+
+    monkeypatch.setattr(mod, "load_or_create_dataset", lambda *args, **kwargs: _Dataset())
+    monkeypatch.setattr(
+        mod,
+        "export_pipeline",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("export should not be called")),
+    )
+
+    with pytest.raises(ValueError, match="Unable to resolve export classes"):
+        mod.main(
+            [
+                "--name",
+                "demo",
+                "--export-dir",
+                str(tmp_path / "out"),
+                "--label-field",
+                "ground_truth",
+                "--classes-field",
+                "ls_corrections.detections.label",
+            ]
+        )

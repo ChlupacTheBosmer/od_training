@@ -1,5 +1,5 @@
 agent_context_version: 1
-last_curated: 2026-02-11
+last_curated: 2026-02-14
 repo_identity:
   name: od_training
   type: personal utility toolbox (non-published package)
@@ -16,6 +16,10 @@ canonical_docs:
       role: root navigation + common commands
     - path: docs/CLI.md
       role: command surface and argument contracts
+    - path: docs/context/dst_handoff_contract.md
+      role: dst -> od_training handoff requirements
+    - path: docs/context/cross_repo_compatibility_matrix.md
+      role: shared dependency baseline with dst
   module_reference:
     - path: docs/src/README.md
       role: API docs index
@@ -36,6 +40,8 @@ canonical_docs:
 
 entrypoints:
   cli:
+    command: odt
+    packaging: pyproject.toml -> project.scripts.odt
     path: scripts/odt.py
     dispatch: src/od_training/cli/main.py
   smoke_script:
@@ -51,9 +57,11 @@ code_map:
   training:
     - src/od_training/train/yolo.py
     - src/od_training/train/rfdetr.py
+    - src/od_training/train/preflight.py
   inference:
     - src/od_training/infer/runner.py
   utilities:
+    - src/od_training/utility/config_cli.py
     - src/od_training/utility/runtime_config.py
     - src/od_training/utility/verify_env.py
     - src/od_training/utility/roboflow_download.py
@@ -92,6 +100,8 @@ external_references:
 key_behavior_invariants:
   - unified_cli_groups: [dataset, train, infer, utility]
   - dataset_export_default: symlink mode (copy only with --copy-images)
+  - dataset_manage_label_field_is_configurable: true
+  - train_cli_preflight_validation_default: true
   - runtime_config_priority: CLI args > local config > environment variables
   - function_docstrings_required: true
   - preferred_edit_target: src/od_training/*

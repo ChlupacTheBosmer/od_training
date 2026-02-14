@@ -69,7 +69,7 @@ def inference_module(monkeypatch):
     monkeypatch.setitem(sys.modules, "supervision", _make_fake_supervision_module())
     monkeypatch.setitem(sys.modules, "rfdetr", _make_fake_rfdetr_module())
 
-    mod = importlib.import_module("src.od_training.infer.runner")
+    mod = importlib.import_module("od_training.infer.runner")
     return importlib.reload(mod)
 
 

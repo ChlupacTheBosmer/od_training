@@ -11,7 +11,7 @@ import argparse
 from ..dataset import augment_preview, convert_cli, manager, view
 from ..infer import runner
 from ..train import rfdetr, yolo
-from ..utility import roboflow_download, roboflow_upload, verify_env
+from ..utility import config_cli, roboflow_download, roboflow_upload, verify_env
 
 
 DISPATCH = {
@@ -23,6 +23,8 @@ DISPATCH = {
     ("train", "rfdetr"): rfdetr.main,
     ("infer", "run"): runner.main,
     ("utility", "verify-env"): verify_env.main,
+    ("utility", "config-init"): config_cli.main_init,
+    ("utility", "config-show"): config_cli.main_show,
     ("utility", "upload-weights"): roboflow_upload.main,
     ("utility", "download-roboflow"): roboflow_download.main,
 }

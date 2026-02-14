@@ -1,6 +1,6 @@
 import pytest
 
-from src.od_training.cli import main as cli_main
+from od_training.cli import main as cli_main
 
 
 pytestmark = pytest.mark.unit
@@ -25,3 +25,17 @@ def test_odt_cli_dispatch_forwards_args(monkeypatch):
 
     assert rc == 0
     assert captured["argv"] == ["--epochs", "1", "--data", "data.yaml"]
+
+
+def test_odt_cli_dispatch_config_show(monkeypatch):
+    captured = {}
+
+    def fake_entry(argv):
+        captured["argv"] = argv
+        return 0
+
+    monkeypatch.setitem(cli_main.__globals__["DISPATCH"], ("utility", "config-show"), fake_entry)
+    rc = cli_main(["utility", "config-show", "--", "--mask-secrets"])
+
+    assert rc == 0
+    assert captured["argv"] == ["--mask-secrets"]

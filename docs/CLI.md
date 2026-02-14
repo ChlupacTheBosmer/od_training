@@ -18,13 +18,13 @@ For module-level API documentation, see `docs/src/README.md`.
 Supported entrypoints:
 
 ```bash
-python scripts/odt.py <group> <command> [args...]
+odt <group> <command> [args...]
 ```
 
 Equivalent module entrypoint:
 
 ```bash
-python -m src.od_training.cli.main <group> <command> [args...]
+python -m od_training.cli.main <group> <command> [args...]
 ```
 
 `group` values:
@@ -48,6 +48,8 @@ The top-level dispatcher is `src/od_training/cli/main.py`, and each command forw
 | `train rfdetr` | `src/od_training/train/rfdetr.py:main` |
 | `infer run` | `src/od_training/infer/runner.py:main` |
 | `utility verify-env` | `src/od_training/utility/verify_env.py:main` |
+| `utility config-init` | `src/od_training/utility/config_cli.py:main_init` |
+| `utility config-show` | `src/od_training/utility/config_cli.py:main_show` |
 | `utility upload-weights` | `src/od_training/utility/roboflow_upload.py:main` |
 | `utility download-roboflow` | `src/od_training/utility/roboflow_download.py:main` |
 
@@ -70,7 +72,7 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py dataset manage [args...]
+odt dataset manage [args...]
 ```
 
 Arguments:
@@ -88,6 +90,8 @@ Arguments:
 | `--export-tags` | list[str] | none | Export only samples having all listed tags |
 | `--copy-images` | flag | off | Copy media into export dir (default is symlink mode) |
 | `--include-confidence` | flag | off | Export 6-column YOLO labels |
+| `--label-field` | str | `ground_truth` | Detection field used for augmentation/export |
+| `--classes-field` | str | auto | Field path for class discovery (`<label-field>.detections.label`) |
 | `--view` | flag | off | Launch FiftyOne app |
 | `--train-tag` | str | `train` | Train split tag |
 | `--val-tag` | str | `val` | Validation split tag |
@@ -98,6 +102,8 @@ Key behavior:
 - Default export mode is symlink-based (`export_media="symlink"`).
 - COCO files are generated as `_annotations_<split>.coco.json`.
 - COCO basename collisions are detected; full paths are kept to avoid corruption.
+- Confidence-column export is opt-in via `--include-confidence` (6-column YOLO labels).
+- Cross-repo handoff contract: `docs/context/dst_handoff_contract.md`.
 
 ### 4.2 `dataset convert`
 
@@ -108,7 +114,7 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py dataset convert <mode> --input <path> --output <path> [--images <dir>]
+odt dataset convert <mode> --input <path> --output <path> [--images <dir>]
 ```
 
 Positional:
@@ -137,7 +143,7 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py dataset view <name> [--import-dir <path>]
+odt dataset view <name> [--import-dir <path>]
 ```
 
 Arguments:
@@ -161,7 +167,7 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py dataset augment-preview --dataset <path> [--name <dataset>] [--yaml <path>]
+odt dataset augment-preview --dataset <path> [--name <dataset>] [--yaml <path>]
 ```
 
 Arguments:
@@ -181,7 +187,7 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py train yolo [args...]
+odt train yolo [args...]
 ```
 
 Arguments:
@@ -196,6 +202,8 @@ Arguments:
 | `--batch` | int | `16` | Batch size |
 | `--imgsz` | int | `640` | Image size |
 | `--device` | str | auto | Device override |
+| `--no-validate-data` | flag | off | Skip dataset preflight validation |
+| `--fail-on-validation-warnings` | flag | off | Treat preflight warnings as fatal |
 
 Passthrough behavior:
 
@@ -203,6 +211,7 @@ Passthrough behavior:
 
 Special behavior:
 
+- By default, runs preflight validation of YOLO split directories before training.
 - If model name contains `yolo26` and optimizer is not provided, `optimizer="MuSGD"` is set.
 - If device is non-CPU and epochs > 1, TensorRT export is attempted.
 
@@ -215,7 +224,7 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py train rfdetr [args...]
+odt train rfdetr [args...]
 ```
 
 Arguments:
@@ -230,6 +239,8 @@ Arguments:
 | `--project` | str | `RF-DETR_Training` | Project name |
 | `--name` | str | `exp` | Experiment name |
 | `--device` | str | auto | Device override |
+| `--no-validate-data` | flag | off | Skip dataset preflight validation |
+| `--fail-on-validation-warnings` | flag | off | Treat preflight warnings as fatal |
 
 Passthrough behavior:
 
@@ -237,6 +248,7 @@ Passthrough behavior:
 
 Special behavior:
 
+- By default, runs preflight validation of RF-DETR split contract before training.
 - `tensorboard=True` and `wandb=True` are defaults unless overridden.
 - If `checkpoint_best_regular.pth` is missing, training only fails if no other `.pth` checkpoint exists.
 
@@ -249,7 +261,7 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py infer run [args...]
+odt infer run [args...]
 ```
 
 Arguments:
@@ -280,7 +292,7 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py utility verify-env
+odt utility verify-env
 ```
 
 Checks:
@@ -295,7 +307,53 @@ Exit behavior:
 - Exits `1` if critical packages are missing
 - Exits `0` otherwise
 
-### 4.9 `utility upload-weights`
+### 4.9 `utility config-init`
+
+Purpose:
+
+- Create local runtime config template at resolved location (or explicit path)
+
+Syntax:
+
+```bash
+odt utility config-init [--config /path/to/local_config.json]
+```
+
+Arguments:
+
+| Argument | Type | Required | Description |
+|---|---:|---:|---|
+| `--config` | str | no | Optional config JSON path |
+
+Behavior:
+
+- Creates a template if missing; returns state `created` or `exists`.
+- Prints JSON payload with resolved path.
+
+### 4.10 `utility config-show`
+
+Purpose:
+
+- Show current resolved local config JSON (optionally masked)
+
+Syntax:
+
+```bash
+odt utility config-show [--config /path/to/local_config.json] [--mask-secrets]
+```
+
+Arguments:
+
+| Argument | Type | Required | Description |
+|---|---:|---:|---|
+| `--config` | str | no | Optional config JSON path |
+| `--mask-secrets` | flag | no | Mask secret-like values in output |
+
+Secret masking:
+
+- Masks keys containing: `api_key`, `token`, `secret`, `password`.
+
+### 4.11 `utility upload-weights`
 
 Purpose:
 
@@ -304,13 +362,14 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py utility upload-weights [args...]
+odt utility upload-weights [args...]
 ```
 
 Arguments:
 
 | Argument | Type | Required | Description |
 |---|---:|---:|---|
+| `--config` | str | no | Optional config JSON path |
 | `--api-key` | str | no | Roboflow API key (optional if configured) |
 | `--workspace` | str | conditional | Workspace ID |
 | `--project` | str | conditional | Project ID |
@@ -324,7 +383,7 @@ Validation behavior:
 - Fails if weights file is empty
 - Fails if required Roboflow settings are unresolved
 
-### 4.10 `utility download-roboflow`
+### 4.12 `utility download-roboflow`
 
 Purpose:
 
@@ -333,13 +392,14 @@ Purpose:
 Syntax:
 
 ```bash
-python scripts/odt.py utility download-roboflow [args...]
+odt utility download-roboflow [args...]
 ```
 
 Arguments:
 
 | Argument | Type | Required | Description |
 |---|---:|---:|---|
+| `--config` | str | no | Optional config JSON path |
 | `--api-key` | str | no | Roboflow API key |
 | `--workspace` | str | conditional | Workspace ID |
 | `--project` | str | conditional | Project ID |
@@ -366,7 +426,9 @@ Interactive behavior:
 
 Runtime config file:
 
-- `config/local_config.json`
+- `ODT_CONFIG_PATH` (if set)
+- `config/local_config.json` (if present in repo)
+- `~/.config/od_training/local_config.json`
 
 Relevant keys:
 
@@ -378,7 +440,7 @@ Relevant keys:
 Resolution priority:
 
 1. CLI arguments
-2. `config/local_config.json`
+2. local config JSON
 3. Environment variables (`ROBOFLOW_API_KEY`, `ROBOFLOW_WORKSPACE`, `ROBOFLOW_PROJECT`)
 
 Notes:
@@ -391,7 +453,7 @@ Notes:
 Train YOLO:
 
 ```bash
-python scripts/odt.py train yolo \
+odt train yolo \
   --model yolo11n.pt \
   --data runs/pipeline_test/dataset.yaml \
   --epochs 10 --batch 8 --imgsz 640
@@ -400,7 +462,7 @@ python scripts/odt.py train yolo \
 Train RF-DETR:
 
 ```bash
-python scripts/odt.py train rfdetr \
+odt train rfdetr \
   --dataset data/my_coco \
   --model rfdetr_nano \
   --epochs 20 --batch 4 --lr 1e-4 \
@@ -411,7 +473,7 @@ python scripts/odt.py train rfdetr \
 Run inference:
 
 ```bash
-python scripts/odt.py infer run \
+odt infer run \
   --type yolo \
   --model runs/train/weights/best.pt \
   --source data/images \
@@ -422,7 +484,7 @@ python scripts/odt.py infer run \
 Download and import Roboflow data:
 
 ```bash
-python scripts/odt.py utility download-roboflow \
+odt utility download-roboflow \
   --workspace my-workspace \
   --project my-project \
   --version 3 \

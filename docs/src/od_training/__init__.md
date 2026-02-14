@@ -16,7 +16,7 @@ Top-level package initializer for the modular training system.
 These exports enable imports such as:
 
 ```python
-from src.od_training import dataset, train
+from od_training import dataset, train
 ```
 
 ## Functions and classes

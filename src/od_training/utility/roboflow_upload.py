@@ -17,8 +17,6 @@ from .runtime_config import (
     get_roboflow_default,
 )
 
-ensure_local_config()
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -80,6 +78,11 @@ def build_parser() -> argparse.ArgumentParser:
     """Build parser for Roboflow weight upload arguments."""
     parser = argparse.ArgumentParser(description="Upload weights to Roboflow.")
     parser.add_argument(
+        "--config",
+        default=None,
+        help="Optional path to local config JSON (otherwise uses ODT_CONFIG_PATH/default lookup).",
+    )
+    parser.add_argument(
         "--api-key",
         default=None,
         help="Roboflow API Key. If omitted, value is loaded from local config.",
@@ -115,23 +118,25 @@ def main(argv=None):
     """
     parser = build_parser()
     args = parser.parse_args(argv)
+    config_path = Path(args.config).expanduser() if args.config else None
+    ensure_local_config(config_path=config_path)
     try:
-        api_key = get_roboflow_api_key(args.api_key)
+        api_key = get_roboflow_api_key(args.api_key, config_path=config_path)
     except ValueError as e:
         parser.error(str(e))
 
-    workspace = args.workspace or get_roboflow_default("workspace")
-    project = args.project or get_roboflow_default("project")
+    workspace = args.workspace or get_roboflow_default("workspace", config_path=config_path)
+    project = args.project or get_roboflow_default("project", config_path=config_path)
 
     if not workspace:
         parser.error(
             "Workspace is required. Provide --workspace or set roboflow.workspace "
-            f"in {get_config_path()}"
+            f"in {get_config_path(config_path=config_path)}"
         )
     if not project:
         parser.error(
             "Project is required. Provide --project or set roboflow.project "
-            f"in {get_config_path()}"
+            f"in {get_config_path(config_path=config_path)}"
         )
 
     upload_weights(

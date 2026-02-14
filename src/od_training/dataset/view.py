@@ -5,10 +5,6 @@ import os
 
 import fiftyone as fo
 
-from ..utility.runtime_config import ensure_local_config
-
-ensure_local_config()
-
 
 def check_dataset_exists(name):
     """Return whether a FiftyOne dataset with ``name`` is available."""

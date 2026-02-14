@@ -20,7 +20,7 @@ Primary docs used for this guide are listed in [Sources](#9-sources).
 
 ### 2.1 Dataset Preparation
 ```bash
-python scripts/odt.py dataset manage \
+odt dataset manage \
   --dataset-dir <path/to/data.yaml-or-dataset-dir> \
   --name <dataset_name> \
   --split \
@@ -33,7 +33,7 @@ Defaults:
 
 ### 2.2 YOLO Training
 ```bash
-python scripts/odt.py train yolo \
+odt train yolo \
   --model yolo11n.pt \
   --data <export_dir>/dataset.yaml \
   --epochs 100 --batch 16 --imgsz 640
@@ -41,7 +41,7 @@ python scripts/odt.py train yolo \
 
 ### 2.3 RF-DETR Training
 ```bash
-python scripts/odt.py train rfdetr \
+odt train rfdetr \
   --dataset <rfdetr_dataset_root> \
   --model rfdetr_nano \
   --epochs 50 --batch 8 --lr 1e-4
@@ -49,7 +49,7 @@ python scripts/odt.py train rfdetr \
 
 ### 2.4 Inference Smoke
 ```bash
-python scripts/odt.py infer run \
+odt infer run \
   --type yolo \
   --model <weights.pt> \
   --source <image-or-dir-or-video> \

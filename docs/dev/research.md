@@ -1,11 +1,11 @@
 # Research Notes (Curated)
 
-**Last curated:** 2026-02-11  
+**Last curated:** 2026-02-14  
 **Scope:** keep only repo-relevant, source-backed findings that inform implementation decisions.
 
 ## 1. What Is Confirmed In This Repo
 
-- Unified CLI is active via `scripts/odt.py` and dispatches into `src/od_training/cli/main.py`.
+- Unified CLI is active via packaged `odt` (compat wrapper: `scripts/odt.py`) and dispatches into `src/od_training/cli/main.py`.
 - Dataset management/export lives in `src/od_training/dataset/manager.py`.
 - Current zero-copy default is symlink export (`export_media="symlink"`), with `--copy-images` for full portable copies.
 - Runtime config (with env fallbacks) is implemented in `src/od_training/utility/runtime_config.py`.
@@ -77,7 +77,7 @@ Use repo requirements as source of truth:
 - `scipy<1.13.0`
 - `pydantic>=1.10,<3.0.0`
 - `ultralytics>=8.0`
-- `rfdetr[metrics]`
+- `rfdetr[metrics,plus]`
 
 Important cleanup:
 - Any older recommendation of `pydantic<2.0.0` is stale relative to current project constraints and should not be used as canonical guidance here.

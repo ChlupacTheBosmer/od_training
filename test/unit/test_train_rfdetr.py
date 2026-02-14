@@ -41,7 +41,7 @@ def train_rfdetr_module(monkeypatch):
     monkeypatch.setitem(sys.modules, "rfdetr", fake_rfdetr)
     monkeypatch.setitem(sys.modules, "clearml", fake_clearml)
 
-    mod = importlib.import_module("src.od_training.train.rfdetr")
+    mod = importlib.import_module("od_training.train.rfdetr")
     return importlib.reload(mod)
 
 
@@ -157,3 +157,41 @@ def test_train_rfdetr_reraises_when_no_checkpoint_exists(train_rfdetr_module, mo
             tensorboard=False,
             wandb=False,
         )
+
+
+def test_train_rfdetr_calls_preflight_when_enabled(train_rfdetr_module, monkeypatch, tmp_path):
+    mod = train_rfdetr_module
+    dataset_dir = tmp_path / "dataset"
+    dataset_dir.mkdir()
+
+    seen = {}
+
+    class DummyModel:
+        def train(self, **kwargs):
+            seen["train_kwargs"] = kwargs
+
+    def fake_preflight(*, dataset_dir, fail_on_warnings=False):
+        seen["dataset_dir"] = dataset_dir
+        seen["fail_on_warnings"] = fail_on_warnings
+        return {"ok": True, "splits": {"train": {}, "valid": {}, "test": {}}, "warnings": []}
+
+    monkeypatch.setattr(mod, "MODEL_MAP", {"rfdetr_nano": lambda: DummyModel()})
+    monkeypatch.setattr(mod, "validate_rfdetr_training_inputs", fake_preflight)
+
+    mod.train_rfdetr(
+        dataset_dir=str(dataset_dir),
+        model_type="rfdetr_nano",
+        epochs=1,
+        batch_size=1,
+        lr=1e-4,
+        project_name="proj",
+        exp_name="exp",
+        device="cpu",
+        validate_data=True,
+        fail_on_validation_warnings=True,
+        tensorboard=False,
+        wandb=False,
+    )
+
+    assert seen["dataset_dir"] == str(dataset_dir)
+    assert seen["fail_on_warnings"] is True

@@ -1,6 +1,6 @@
 import pytest
 
-from src.cli_utils import _convert_value, parse_unknown_args
+from od_training.utility.cli import _convert_value, parse_unknown_args
 
 
 pytestmark = pytest.mark.unit

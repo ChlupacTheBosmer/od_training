@@ -43,9 +43,9 @@ def test_rfdetr_one_process_export_train_infer(
 ):
     pytest.importorskip("rfdetr")
     fo = pytest.importorskip("fiftyone")
-    dataset_manager = importlib.import_module("src.od_training.dataset.manager")
-    train_rfdetr_mod = importlib.import_module("src.od_training.train.rfdetr")
-    inference_mod = importlib.import_module("src.od_training.infer.runner")
+    dataset_manager = importlib.import_module("od_training.dataset.manager")
+    train_rfdetr_mod = importlib.import_module("od_training.train.rfdetr")
+    inference_mod = importlib.import_module("od_training.infer.runner")
 
     runtime_tmp = tmp_path / "runtime_tmp"
     runtime_tmp.mkdir(parents=True, exist_ok=True)

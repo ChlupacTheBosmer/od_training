@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Unified CLI wrapper."""
+"""Compatibility wrapper for the packaged ``odt`` entrypoint.
 
-import sys
-from pathlib import Path
+Preferred usage is the installed console script:
+    odt <group> <command> [args...]
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+This wrapper intentionally avoids path injection. Install the repo in editable
+mode first (`python -m pip install -e .`) and then invoke either `odt` or this
+wrapper script.
+"""
 
-from src.od_training.cli.main import main
+from od_training.cli.main import main
 
 
 if __name__ == "__main__":

@@ -9,11 +9,6 @@ import cv2
 import supervision as sv
 from pathlib import Path
 
-
-from ..utility.runtime_config import ensure_local_config
-
-ensure_local_config()
-
 # Import models
 from ultralytics import YOLO
 

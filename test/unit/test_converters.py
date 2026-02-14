@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-import src.converters as converters
+from od_training.dataset import convert as converters
 
 
 pytestmark = pytest.mark.unit

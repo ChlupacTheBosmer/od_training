@@ -5,9 +5,11 @@
 __pycache__/
 *.pyc
 *log.txt
+*.egg-info/
 
 # Python
 venv/
+.venv/
 env/
 .env
 config/local_config.json
@@ -15,7 +17,10 @@ config/local_config.json
 
 # Data & Models
 data/
-runs/
+runs/*
+!runs/tmp/
+runs/tmp/*
+!runs/tmp/.gitkeep
 *.pt
 *.pth
 *.engine

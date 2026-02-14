@@ -2,6 +2,9 @@
 
 This directory contains module-level technical documentation for every Python module under `src/`.
 
+Runtime imports in packaged mode use `od_training.*`. This index keeps source
+path-oriented names for direct file mapping.
+
 ## Top-level modules
 
 | Module | File | Doc |
@@ -28,9 +31,11 @@ This directory contains module-level technical documentation for every Python mo
 | `src.od_training.infer` | `src/od_training/infer/__init__.py` | [`docs/src/od_training/infer/__init__.md`](./od_training/infer/__init__.md) |
 | `src.od_training.infer.runner` | `src/od_training/infer/runner.py` | [`docs/src/od_training/infer/runner.md`](./od_training/infer/runner.md) |
 | `src.od_training.train` | `src/od_training/train/__init__.py` | [`docs/src/od_training/train/__init__.md`](./od_training/train/__init__.md) |
+| `src.od_training.train.preflight` | `src/od_training/train/preflight.py` | [`docs/src/od_training/train/preflight.md`](./od_training/train/preflight.md) |
 | `src.od_training.train.rfdetr` | `src/od_training/train/rfdetr.py` | [`docs/src/od_training/train/rfdetr.md`](./od_training/train/rfdetr.md) |
 | `src.od_training.train.yolo` | `src/od_training/train/yolo.py` | [`docs/src/od_training/train/yolo.md`](./od_training/train/yolo.md) |
 | `src.od_training.utility` | `src/od_training/utility/__init__.py` | [`docs/src/od_training/utility/__init__.md`](./od_training/utility/__init__.md) |
+| `src.od_training.utility.config_cli` | `src/od_training/utility/config_cli.py` | [`docs/src/od_training/utility/config_cli.md`](./od_training/utility/config_cli.md) |
 | `src.od_training.utility.cli` | `src/od_training/utility/cli.py` | [`docs/src/od_training/utility/cli.md`](./od_training/utility/cli.md) |
 | `src.od_training.utility.device` | `src/od_training/utility/device.py` | [`docs/src/od_training/utility/device.md`](./od_training/utility/device.md) |
 | `src.od_training.utility.roboflow_download` | `src/od_training/utility/roboflow_download.py` | [`docs/src/od_training/utility/roboflow_download.md`](./od_training/utility/roboflow_download.md) |

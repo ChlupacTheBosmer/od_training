@@ -6,10 +6,6 @@ information.  Exits with code 1 if any *hard* requirement is missing.
 
 import sys
 
-from .runtime_config import ensure_local_config
-
-ensure_local_config()
-
 def verify():
     """Run environment checks and report results."""
     print("--- Environment Verification ---")

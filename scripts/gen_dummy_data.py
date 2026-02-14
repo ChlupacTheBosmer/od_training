@@ -1,14 +1,10 @@
 """Generate a tiny local dummy dataset for pipeline smoke testing."""
 
 import os
-import sys
 from PIL import Image
-from pathlib import Path
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from src.runtime_config import ensure_local_config
+from od_training.utility.runtime_config import ensure_local_config
 
 ensure_local_config()
 

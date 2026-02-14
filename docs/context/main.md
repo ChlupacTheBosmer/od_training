@@ -2,6 +2,11 @@
 
 Note: _This is purely the output of the chat conversation and does not contain any raw data, codebase snippets, etc. used to generate the output._
 
+## Current Context Supplements
+
+- `docs/context/dst_handoff_contract.md`
+- `docs/context/cross_repo_compatibility_matrix.md`
+
 ### User Input
 
 In this folder we will create a repository for training object detection models. We will focus on two specific architectures: YOLO and RF-DETR. 

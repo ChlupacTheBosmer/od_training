@@ -16,11 +16,12 @@ done
 EXPORT_DIR="runs/pipeline_test"
 FO_DATASET="dummy_manager_test"
 FO_AUG_DATASET="dummy_manager_separate"
+ODT_BIN="${ODT_BIN:-odt}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
-if [ -x "venv/bin/python" ]; then
-    PYTHON_BIN="venv/bin/python"
-else
-    PYTHON_BIN="python3"
+if ! command -v "$ODT_BIN" >/dev/null 2>&1; then
+    echo "Missing '$ODT_BIN' command. Install editable package first: python -m pip install -e ."
+    exit 1
 fi
 
 # ─── 0. Clean previous runs ─────────────────────────────────────────────────
@@ -42,7 +43,7 @@ cleanup
 # ─── 1. Import + split + augment to separate dataset ────────────────────────
 echo ""
 echo "=== Step 1: Import, Split & Augment ==="
-if ! "$PYTHON_BIN" scripts/odt.py dataset manage \
+if ! "$ODT_BIN" dataset manage \
     --dataset-dir data/dummy_yolo/data.yaml \
     --name "$FO_DATASET" \
     --split \
@@ -59,7 +60,7 @@ fi
 # ─── 2. Export — Symlink mode (default, zero-copy) ──────────────────────────
 echo ""
 echo "=== Step 2: Export (symlink mode) ==="
-if ! "$PYTHON_BIN" scripts/odt.py dataset manage \
+if ! "$ODT_BIN" dataset manage \
     --name "$FO_AUG_DATASET" \
     --export-dir "$EXPORT_DIR" \
     --export-tags augmented; then

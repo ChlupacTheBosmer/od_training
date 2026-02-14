@@ -6,6 +6,10 @@
 
 Implements unified `odt` command dispatch. This module is intentionally thin and delegates to submodule `main(argv)` handlers.
 
+Console script entrypoint:
+
+- `odt` (defined in `pyproject.toml`)
+
 ## Globals
 
 ### `DISPATCH`
@@ -22,6 +26,8 @@ Supported commands:
 - `train rfdetr`
 - `infer run`
 - `utility verify-env`
+- `utility config-init`
+- `utility config-show`
 - `utility upload-weights`
 - `utility download-roboflow`
 

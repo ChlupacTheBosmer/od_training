@@ -17,12 +17,59 @@ from tqdm import tqdm
 import warnings
 
 
-from ..utility.runtime_config import ensure_local_config
-
-ensure_local_config()
-
 # Suppress Albumentations version check warning (SSL/Network issues)
 warnings.filterwarnings("ignore", category=UserWarning, module="albumentations")
+
+
+def _available_sample_fields(dataset):
+    """Return sorted sample-field names when discoverable."""
+    getter = getattr(dataset, "get_field_schema", None)
+    if callable(getter):
+        try:
+            schema = getter()
+            if isinstance(schema, dict):
+                return sorted(str(k) for k in schema.keys())
+        except Exception:
+            pass
+    return []
+
+
+def _ensure_label_field_exists(dataset, label_field: str):
+    """Raise a clear error when a requested export label field is missing."""
+    has_field = getattr(dataset, "has_sample_field", None)
+    if not callable(has_field):
+        # Test doubles may not expose FiftyOne schema APIs.
+        return
+    try:
+        exists = bool(has_field(label_field))
+    except Exception:
+        return
+    if exists:
+        return
+
+    available = _available_sample_fields(dataset)
+    details = f" Available sample fields: {', '.join(available)}." if available else ""
+    raise ValueError(
+        f"Label field '{label_field}' was not found on dataset "
+        f"'{getattr(dataset, 'name', '<unknown>')}'.{details}"
+    )
+
+
+def _resolve_classes_for_export(dataset, label_field: str, classes_field: str | None):
+    """Resolve classes for export with clear failures on bad class paths."""
+    classes = getattr(dataset, "default_classes", None)
+    if classes:
+        return classes
+
+    field_path = classes_field or f"{label_field}.detections.label"
+    try:
+        return dataset.distinct(field_path)
+    except Exception as exc:
+        raise ValueError(
+            "Unable to resolve export classes. "
+            f"Field path '{field_path}' is invalid or unavailable on dataset "
+            f"'{getattr(dataset, 'name', '<unknown>')}'."
+        ) from exc
 
 # =============================================================================
 # AUGMENTATION PIPELINES
@@ -115,7 +162,14 @@ def load_or_create_dataset(dataset_dir, name, split_ratios=None, train_tag="trai
 # =============================================================================
 # AUGMENTATION LOGIC
 # =============================================================================
-def augment_samples(dataset, filter_tags=None, new_dataset_name=None, output_dir=None, num_aug=1):
+def augment_samples(
+    dataset,
+    filter_tags=None,
+    new_dataset_name=None,
+    output_dir=None,
+    num_aug=1,
+    label_field="ground_truth",
+):
     """
     Apply augmentations to samples matching `filter_tags`.
     If `filter_tags` is None, augment ALL samples.
@@ -129,6 +183,14 @@ def augment_samples(dataset, filter_tags=None, new_dataset_name=None, output_dir
        - Created on disk at `data/augmented/{dest_dataset_name}/...`
        - ID: New unique ID.
        - Tags: Copied from original sample + "augmented".
+
+    Args:
+        dataset: Source FiftyOne dataset.
+        filter_tags: Optional tag list used as a chained ``match_tags`` filter.
+        new_dataset_name: Optional destination dataset name.
+        output_dir: Optional explicit augmented image directory.
+        num_aug: Number of augmented variants per input sample.
+        label_field: Detection field to read from and write to.
     """
     # 1. Select Samples
     if filter_tags:
@@ -184,8 +246,13 @@ def augment_samples(dataset, filter_tags=None, new_dataset_name=None, output_dir
         bboxes = []
         labels = []
         
-        if sample.ground_truth:
-            for det in sample.ground_truth.detections:
+        # SampleView objects do not expose dict-like `.get()`
+        try:
+            sample_labels = sample[label_field]
+        except Exception:
+            sample_labels = None
+        if sample_labels:
+            for det in sample_labels.detections:
                 x, y, wa, ha = det.bounding_box
                 xc = x + wa / 2
                 yc = y + ha / 2
@@ -214,7 +281,7 @@ def augment_samples(dataset, filter_tags=None, new_dataset_name=None, output_dir
                 
                 # Create Sample
                 s = fo.Sample(filepath=os.path.abspath(save_path))
-                s["ground_truth"] = fo.Detections(detections=new_dets)
+                s[label_field] = fo.Detections(detections=new_dets)
                 
                 # Copy tags and add 'augmented'
                 new_tags = list(sample.tags) if sample.tags else []
@@ -243,6 +310,8 @@ def export_pipeline(
     dataset,
     export_dir,
     classes=None,
+    label_field="ground_truth",
+    classes_field=None,
     train_tag="train",
     val_tag="val",
     test_tag="test",
@@ -266,6 +335,9 @@ def export_pipeline(
         dataset: FiftyOne dataset.
         export_dir: Destination directory for the export.
         classes: Optional list of class names. If None, inferred from data.
+        label_field: Detection field exported to YOLO/COCO artifacts.
+        classes_field: Optional class discovery path override used when
+            ``classes`` is omitted.
         train_tag: Tag identifying training samples.
         val_tag: Tag identifying validation samples.
         test_tag: Tag identifying test samples.
@@ -277,6 +349,13 @@ def export_pipeline(
             confidence score). Default False writes standard 5-column.
     """
     export_dir = os.path.abspath(export_dir)
+    _ensure_label_field_exists(dataset, label_field)
+    if classes is None:
+        classes = _resolve_classes_for_export(
+            dataset,
+            label_field=label_field,
+            classes_field=classes_field,
+        )
     export_mode = True if copy_images else "symlink"
     mode_label = "copy" if copy_images else "symlink"
     print(f"Exporting to {export_dir} (media mode: {mode_label})...")
@@ -306,7 +385,7 @@ def export_pipeline(
         split_view.export(
             export_dir=export_dir,
             dataset_type=fo.types.YOLOv5Dataset,
-            label_field="ground_truth",
+            label_field=label_field,
             classes=classes,
             split=std_split,
             export_media=export_mode,
@@ -318,7 +397,7 @@ def export_pipeline(
         split_view.export(
             labels_path=json_path,
             dataset_type=fo.types.COCODetectionDataset,
-            label_field="ground_truth",
+            label_field=label_field,
             classes=classes,
             export_media=False,
         )
@@ -378,6 +457,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--export-tags", nargs='+', help="Filter export to samples having ALL these tags (e.g. 'augmented')")
     parser.add_argument("--copy-images", action="store_true", help="Copy images to export dir (self-contained). Default: symlink to originals (zero disk bloat)")
     parser.add_argument("--include-confidence", action="store_true", help="Export 6-column YOLO labels (with confidence score). Default: 5-column")
+    parser.add_argument("--label-field", default="ground_truth", help="Detection field to read/write during augmentation and export")
+    parser.add_argument("--classes-field", default=None, help="Field path used for class discovery when default_classes is missing (default: <label-field>.detections.label)")
     
     # View
     parser.add_argument("--view", action="store_true", help="Launch FiftyOne App after processing")
@@ -419,16 +500,21 @@ def main(argv=None):
             new_dataset_name=args.output_dataset,
             output_dir=args.output_dir,
             num_aug=1,
+            label_field=args.label_field,
         )
 
     if args.export_dir:
-        classes = dataset.default_classes
-        if not classes:
-            classes = dataset.distinct("ground_truth.detections.label")
+        _ensure_label_field_exists(dataset, args.label_field)
+        classes = _resolve_classes_for_export(
+            dataset,
+            label_field=args.label_field,
+            classes_field=args.classes_field,
+        )
         export_pipeline(
             dataset,
             args.export_dir,
             classes=classes,
+            label_field=args.label_field,
             train_tag=args.train_tag,
             val_tag=args.val_tag,
             test_tag=args.test_tag,

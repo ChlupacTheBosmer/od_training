@@ -32,7 +32,7 @@ def train_yolo_module(monkeypatch):
     monkeypatch.setitem(sys.modules, "ultralytics", fake_ultralytics)
     monkeypatch.setitem(sys.modules, "clearml", fake_clearml)
 
-    mod = importlib.import_module("src.od_training.train.yolo")
+    mod = importlib.import_module("od_training.train.yolo")
     return importlib.reload(mod)
 
 
@@ -144,3 +144,38 @@ def test_train_yolo_continues_when_clearml_init_fails(train_yolo_module, monkeyp
 
     assert result == {"ok": True}
     assert created["model"].train_args["data"] == "data.yaml"
+
+
+def test_train_yolo_calls_preflight_when_enabled(train_yolo_module, monkeypatch):
+    mod = train_yolo_module
+    created = {}
+    seen = {}
+
+    def fake_yolo(_):
+        model = _FakeModel()
+        created["model"] = model
+        return model
+
+    def fake_preflight(*, data_yaml, fail_on_warnings=False):
+        seen["data_yaml"] = data_yaml
+        seen["fail_on_warnings"] = fail_on_warnings
+        return {"ok": True, "checked_splits": ["train"], "warnings": []}
+
+    monkeypatch.setattr(mod, "YOLO", fake_yolo)
+    monkeypatch.setattr(mod.Task, "init", lambda **_: object())
+    monkeypatch.setattr(mod, "validate_yolo_training_inputs", fake_preflight)
+
+    mod.train_yolo(
+        "yolo11n.pt",
+        "data.yaml",
+        "proj",
+        "exp",
+        validate_data=True,
+        fail_on_validation_warnings=True,
+        epochs=1,
+        batch=1,
+        device="cpu",
+    )
+
+    assert seen["data_yaml"] == "data.yaml"
+    assert seen["fail_on_warnings"] is True

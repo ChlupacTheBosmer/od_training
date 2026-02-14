@@ -1,13 +1,13 @@
 
 import os
 import json
-import sys
-from pathlib import Path
 
-# Add repo root to path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from src.runtime_config import get_roboflow_api_key, get_roboflow_default, ensure_local_config, get_config_path
+from od_training.utility.runtime_config import (
+    ensure_local_config,
+    get_config_path,
+    get_roboflow_api_key,
+    get_roboflow_default,
+)
 
 def test_priority():
     print("--- Testing Config Priority ---")

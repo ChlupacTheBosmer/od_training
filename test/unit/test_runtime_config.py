@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from src import runtime_config
+from od_training.utility import runtime_config
 
 
 pytestmark = pytest.mark.unit
@@ -60,6 +60,7 @@ def test_get_roboflow_api_key_raises_for_placeholder(monkeypatch):
         "load_local_config",
         lambda config_path=None: {"roboflow": {"api_key": "<PASTE_ROBOFLOW_API_KEY_HERE>"}},
     )
+    monkeypatch.delenv("ROBOFLOW_API_KEY", raising=False)
 
     with pytest.raises(ValueError):
         runtime_config.get_roboflow_api_key(None)
@@ -87,5 +88,37 @@ def test_get_roboflow_default_returns_none_for_placeholder(monkeypatch):
         "load_local_config",
         lambda config_path=None: {"roboflow": {"workspace": "<OPTIONAL_DEFAULT_WORKSPACE_ID>"}},
     )
+    monkeypatch.delenv("ROBOFLOW_WORKSPACE", raising=False)
 
     assert runtime_config.get_roboflow_default("workspace") is None
+
+
+def test_resolve_default_local_config_path_env_override(monkeypatch, tmp_path):
+    path = tmp_path / "custom.json"
+    monkeypatch.setenv("ODT_CONFIG_PATH", str(path))
+    assert runtime_config.resolve_default_local_config_path() == path
+
+
+def test_get_config_path_explicit_argument(tmp_path):
+    path = tmp_path / "manual.json"
+    assert runtime_config.get_config_path(path) == path
+
+
+def test_parse_local_config_returns_typed_model():
+    cfg = runtime_config.parse_local_config(
+        {
+            "_instructions": {"note": "x"},
+            "roboflow": {"api_key": "abc", "workspace": "ws", "project": "proj"},
+            "data_dir": "data_local",
+        }
+    )
+
+    assert cfg.roboflow.api_key == "abc"
+    assert cfg.roboflow.workspace == "ws"
+    assert cfg.roboflow.project == "proj"
+    assert cfg.data_dir == "data_local"
+
+
+def test_parse_local_config_rejects_invalid_schema():
+    with pytest.raises(ValueError):
+        runtime_config.parse_local_config({"roboflow": {"api_key": "abc"}, "data_dir": []})

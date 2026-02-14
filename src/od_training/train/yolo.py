@@ -1,22 +1,28 @@
 """YOLO training entrypoints and CLI helpers."""
 
 import argparse
-import os
 from ultralytics import YOLO
 from clearml import Task
 import logging
 
 
-from ..utility.runtime_config import ensure_local_config
 from ..utility.device import resolve_device
 from ..utility.cli import parse_unknown_args
-
-ensure_local_config()
+from .preflight import validate_yolo_training_inputs
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def train_yolo(model_name: str, data_yaml: str, project_name: str, exp_name: str, **kwargs):
+def train_yolo(
+    model_name: str,
+    data_yaml: str,
+    project_name: str,
+    exp_name: str,
+    *,
+    validate_data: bool = False,
+    fail_on_validation_warnings: bool = False,
+    **kwargs,
+):
     """Train a YOLO model with optional ClearML initialization.
 
     This function is the YOLO counterpart to ``train.rfdetr.train_rfdetr`` and
@@ -27,11 +33,24 @@ def train_yolo(model_name: str, data_yaml: str, project_name: str, exp_name: str
         data_yaml: Dataset YAML path.
         project_name: Project name used by ClearML and Ultralytics outputs.
         exp_name: Run name used by ClearML and Ultralytics outputs.
+        validate_data: If true, run dataset preflight validation first.
+        fail_on_validation_warnings: If true, warnings fail preflight.
         **kwargs: Additional arguments forwarded to ``model.train``.
 
     Returns:
         Ultralytics training results object.
     """
+    if validate_data:
+        preflight = validate_yolo_training_inputs(
+            data_yaml=data_yaml,
+            fail_on_warnings=fail_on_validation_warnings,
+        )
+        logger.info(
+            "YOLO preflight OK: splits=%s warnings=%d",
+            preflight.get("checked_splits", []),
+            len(preflight.get("warnings", [])),
+        )
+
     logger.info(f"Initializing ClearML Task: {project_name}/{exp_name}")
     # Initialize ClearML task
     # Note: Ultralytics has auto-clearml, but explicit init gives us more control over task naming
@@ -83,6 +102,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--batch", type=int, default=16, help="Batch size")
     parser.add_argument("--imgsz", type=int, default=640, help="Image size")
     parser.add_argument("--device", type=str, default=None, help="Device (cpu, 0, 0,1, etc.)")
+    parser.add_argument(
+        "--no-validate-data",
+        action="store_true",
+        help="Skip dataset preflight validation before training.",
+    )
+    parser.add_argument(
+        "--fail-on-validation-warnings",
+        action="store_true",
+        help="Treat dataset preflight warnings as errors.",
+    )
     return parser
 
 
@@ -104,7 +133,15 @@ def main(argv=None) -> int:
         "device": resolve_device(args.device),
         **kwargs,
     }
-    train_yolo(args.model, args.data, args.project, args.name, **train_args)
+    train_yolo(
+        args.model,
+        args.data,
+        args.project,
+        args.name,
+        validate_data=not args.no_validate_data,
+        fail_on_validation_warnings=args.fail_on_validation_warnings,
+        **train_args,
+    )
     return 0
 
 

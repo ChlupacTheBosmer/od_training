@@ -1,109 +1,107 @@
 # od_training
 
-Personal utility repository for object detection training workflows.
+Personal object-detection training toolkit for:
 
-This is a working toolbox for:
-- preparing datasets
-- training YOLO and RF-DETR models
-- running inference
-- handling a few Roboflow utility tasks
+- dataset preparation/export around FiftyOne
+- YOLO and RF-DETR training entrypoints
+- inference helpers
+- Roboflow utility operations
 
-## Quick Start (Re-entry)
+The repository is packaged and exposes a unified CLI command: `odt`.
 
-If you return after a long time, do this first:
-1. Read current project state: `docs/dev/status.md`
-2. Read recent changes: `docs/dev/progress.md`
-3. Check CLI surface: `docs/CLI.md`
-4. Confirm environment: `venv/bin/python scripts/odt.py utility verify-env`
-5. Check local config: `config/local_config.json`
+## Quick Start
 
-## Main Entrypoint
-
-Use the unified CLI:
+1. install in editable mode:
 
 ```bash
-python scripts/odt.py <group> <command> [args...]
+python -m pip install -e .
 ```
 
-Groups:
-- `dataset`
-- `train`
-- `infer`
-- `utility`
+2. verify environment:
+
+```bash
+odt utility verify-env
+```
+
+3. inspect CLI surface:
+
+```bash
+odt --help
+```
+
+## Main Entrypoints
+
+- preferred: `odt <group> <command> [args...]`
+- compatibility wrapper: `python scripts/odt.py <group> <command> [args...]`
 
 Top-level dispatch lives in `src/od_training/cli/main.py`.
 
-## Repository Map
+## Repository Layout
 
-- `scripts/odt.py`: unified CLI wrapper
-- `scripts/verify_pipeline.sh`: end-to-end smoke script
-- `src/od_training/dataset/`: import/split/augment/export/convert/view logic
-- `src/od_training/train/`: YOLO and RF-DETR training wrappers
-- `src/od_training/infer/`: inference runner
-- `src/od_training/utility/`: runtime config, env checks, Roboflow helpers
-- `docs/CLI.md`: command reference
-- `docs/agent/`: AI-agent onboarding context pack
-- `docs/dev/`: developer notes (`status`, `progress`, research/history)
-- `docs/src/`: per-module documentation snapshots
-- `test/`: unit/integration tests
+- `src/od_training/`
+  - package source modules
+- `scripts/`
+  - wrapper and utility scripts
+- `test/`
+  - unit and integration tests
+- `docs/CLI.md`
+  - CLI contract
+- `docs/context/`
+  - workflow and handoff context docs
 
-## Where To Look For What
+## Configuration
 
-| Need | Start Here |
-|---|---|
-| Dataset import/augmentation/export | `src/od_training/dataset/manager.py` |
-| Format conversion (YOLO/COCO) | `src/od_training/dataset/convert.py` |
-| YOLO training | `src/od_training/train/yolo.py` |
-| RF-DETR training | `src/od_training/train/rfdetr.py` |
-| Inference | `src/od_training/infer/runner.py` |
-| Roboflow download | `src/od_training/utility/roboflow_download.py` |
-| Roboflow upload | `src/od_training/utility/roboflow_upload.py` |
-| Runtime config and credential resolution | `src/od_training/utility/runtime_config.py` |
-| Environment diagnostics | `src/od_training/utility/verify_env.py` |
-| CLI command routing | `src/od_training/cli/main.py` |
+Roboflow-sensitive settings are loaded from a local config JSON.
 
-## Common Command Patterns
+Resolution order:
 
-Dataset workflow:
+1. `ODT_CONFIG_PATH`
+2. repo-local `config/local_config.json` (if present)
+3. `~/.config/od_training/local_config.json` (or `$XDG_CONFIG_HOME/od_training/local_config.json`)
+
+`config/local_config.json` is gitignored.
+
+## Common Commands
+
+Dataset manage/export:
 
 ```bash
-python scripts/odt.py dataset manage --dataset-dir <data.yaml-or-dir> --name <dataset_name> --split --export-dir <export_dir>
+odt dataset manage --dataset-dir data/dummy_yolo/data.yaml --name demo_ds --split --export-dir runs/export_demo
+```
+
+Config helpers:
+
+```bash
+odt utility config-init
+odt utility config-show --mask-secrets
 ```
 
 YOLO training:
 
 ```bash
-python scripts/odt.py train yolo --model yolo11n.pt --data <export_dir>/dataset.yaml --epochs 100 --batch 16 --imgsz 640
+odt train yolo --model yolo11n.pt --data runs/export_demo/dataset.yaml --epochs 10 --batch 8
 ```
+
+By default, training commands run dataset preflight validation first.
+Use `--no-validate-data` to bypass preflight when intentionally needed.
 
 RF-DETR training:
 
 ```bash
-python scripts/odt.py train rfdetr --dataset <dataset_root> --model rfdetr_nano --epochs 50 --batch 8 --lr 1e-4
+odt train rfdetr --dataset runs/export_demo --model rfdetr_nano --epochs 10 --batch 4
 ```
 
 Inference:
 
 ```bash
-python scripts/odt.py infer run --type yolo --model <weights.pt> --source <image|dir|video|0|rtsp://...> --save-dir <out_dir>
+odt infer run --type yolo --model yolo11n.pt --source data/images --save-dir runs/infer_demo
 ```
 
-## Config And Environment
+## dst -> od_training Handoff
 
-Local config file:
-- `config/local_config.json`
+This repo consumes curated datasets produced by `dst`.
 
-Roboflow credentials can be resolved from:
-1. CLI arguments
-2. `config/local_config.json`
-3. Environment variables:
-   - `ROBOFLOW_API_KEY`
-   - `ROBOFLOW_WORKSPACE`
-   - `ROBOFLOW_PROJECT`
+Contract document:
+- `docs/context/dst_handoff_contract.md`
 
-Dependencies are pinned/ranged in `requirements.txt`.
-
-## Notes On Layout
-
-- `src/runtime_config.py`, `src/cli_utils.py`, `src/device_utils.py`, and `src/converters.py` exist as compatibility-layer modules mirroring the modular package under `src/od_training/`.
-- New work should generally target modules under `src/od_training/`.
+Use this when exporting from `dst` and importing/training in `od_training`.

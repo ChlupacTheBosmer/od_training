@@ -19,12 +19,13 @@ Maps model keys to RF-DETR classes, including aliases:
 
 ## Functions
 
-### `train_rfdetr(dataset_dir: str, model_type: str, epochs: int, batch_size: int, lr: float, project_name: str, exp_name: str, device: str = None, **kwargs)`
+### `train_rfdetr(dataset_dir: str, model_type: str, epochs: int, batch_size: int, lr: float, project_name: str, exp_name: str, device: str = None, validate_data: bool = False, fail_on_validation_warnings: bool = False, **kwargs)`
 
 Constructs RF-DETR model instance and runs `model.train(**train_args)`.
 
 Behavior:
 
+- Optional preflight validates RF-DETR split contract (`train/valid/test` + `_annotations.coco.json`).
 - Initializes ClearML task when available.
 - Resolves model class from `MODEL_MAP` with substring fallback.
 - Falls back to `RFDETRMedium` when model key is unknown.
@@ -37,6 +38,7 @@ Behavior:
 Defines CLI arguments:
 
 - `--dataset`, `--model`, `--epochs`, `--batch`, `--lr`, `--project`, `--name`, `--device`
+- `--no-validate-data`, `--fail-on-validation-warnings`
 
 ### `main(argv=None) -> int`
 

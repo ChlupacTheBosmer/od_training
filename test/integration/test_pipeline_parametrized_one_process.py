@@ -92,10 +92,10 @@ def test_one_process_pipeline_contract(
     fo = pytest.importorskip("fiftyone")
     _stub_train_and_inference_dependencies(monkeypatch)
 
-    dataset_manager = _import_and_reload("src.od_training.dataset.manager")
-    train_yolo_mod = _import_and_reload("src.od_training.train.yolo")
-    train_rfdetr_mod = _import_and_reload("src.od_training.train.rfdetr")
-    inference_mod = _import_and_reload("src.od_training.infer.runner")
+    dataset_manager = _import_and_reload("od_training.dataset.manager")
+    train_yolo_mod = _import_and_reload("od_training.train.yolo")
+    train_rfdetr_mod = _import_and_reload("od_training.train.rfdetr")
+    inference_mod = _import_and_reload("od_training.infer.runner")
 
     dataset_name = f"it_param_{model_type}_{uuid.uuid4().hex[:8]}"
 

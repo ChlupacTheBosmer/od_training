@@ -9,7 +9,7 @@ Runs YOLO training with optional ClearML tracking and post-training TensorRT exp
 
 ## Functions
 
-### `train_yolo(model_name: str, data_yaml: str, project_name: str, exp_name: str, **kwargs)`
+### `train_yolo(model_name: str, data_yaml: str, project_name: str, exp_name: str, *, validate_data=False, fail_on_validation_warnings=False, **kwargs)`
 
 Loads a YOLO model and calls `model.train(...)`.
 
@@ -19,10 +19,13 @@ Parameters:
 - `data_yaml`: path to dataset YAML.
 - `project_name`: run/project directory or logical project name.
 - `exp_name`: experiment name.
+- `validate_data`: run preflight dataset validation before training.
+- `fail_on_validation_warnings`: escalate preflight warnings to failures.
 - `**kwargs`: forwarded to Ultralytics training API.
 
 Behavior:
 
+- Optional preflight validates split image/label structure from YOLO YAML.
 - Attempts `Task.init(...)` for ClearML; continues if tracking init fails.
 - If model name contains `yolo26` and optimizer is missing, sets `optimizer="MuSGD"`.
 - If `device != "cpu"` and `epochs > 1`, attempts TensorRT export.
@@ -34,6 +37,7 @@ Returns Ultralytics training result object.
 Defines CLI arguments:
 
 - `--model`, `--data`, `--project`, `--name`, `--epochs`, `--batch`, `--imgsz`, `--device`
+- `--no-validate-data`, `--fail-on-validation-warnings`
 
 ### `main(argv=None) -> int`
 

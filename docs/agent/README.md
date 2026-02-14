@@ -20,7 +20,7 @@ This folder is the agent-first launchpad. It does not duplicate full project doc
 
 1. Check current worktree and repository state.
 2. Confirm environment and dependency imports:
-   - `venv/bin/python scripts/odt.py utility verify-env`
+   - `odt utility verify-env`
 3. Route to the relevant code area using `context_index.yaml` and `README.md` maps.
 4. Implement changes in `src/od_training/*` by default.
 5. Run targeted tests.

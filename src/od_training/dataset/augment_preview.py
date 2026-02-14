@@ -7,11 +7,6 @@ behavior before running heavier dataset pipelines in ``dataset.manager``.
 import sys
 from pathlib import Path
 
-
-from ..utility.runtime_config import ensure_local_config
-
-ensure_local_config()
-
 import fiftyone as fo
 import fiftyone.zoo as foz
 import albumentations as A

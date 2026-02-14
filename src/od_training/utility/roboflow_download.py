@@ -75,7 +75,7 @@ def prompt_with_default(prompt: str, default: Optional[str] = None, required: bo
             print("This field is required. Please provide a value.")
 
 
-def get_interactive_params(args):
+def get_interactive_params(args, config_path: Path | None = None):
     """Get parameters interactively with config/env fallbacks.
     
     Shows user what values are available from config/env so they can choose
@@ -87,7 +87,7 @@ def get_interactive_params(args):
     # API Key
     api_key_default = None
     try:
-        api_key_default = get_roboflow_api_key(args.api_key)
+        api_key_default = get_roboflow_api_key(args.api_key, config_path=config_path)
         print(f"✓ API key found in config/env")
     except ValueError:
         print("✗ No API key found in config/env")
@@ -98,7 +98,11 @@ def get_interactive_params(args):
         args.api_key = api_key_default
     
     # Workspace
-    workspace_default = get_roboflow_default("workspace") if not args.workspace else args.workspace
+    workspace_default = (
+        get_roboflow_default("workspace", config_path=config_path)
+        if not args.workspace
+        else args.workspace
+    )
     if workspace_default:
         print(f"✓ Workspace found in config/env: {workspace_default}")
     else:
@@ -106,7 +110,11 @@ def get_interactive_params(args):
     args.workspace = prompt_with_default("Workspace ID", workspace_default, required=True)
     
     # Project
-    project_default = get_roboflow_default("project") if not args.project else args.project
+    project_default = (
+        get_roboflow_default("project", config_path=config_path)
+        if not args.project
+        else args.project
+    )
     if project_default:
         print(f"✓ Project found in config/env: {project_default}")
     else:
@@ -122,7 +130,7 @@ def get_interactive_params(args):
         args.format = prompt_with_default("Dataset Format", default="yolov11", required=True)
     
     # Download directory
-    data_dir = get_data_dir()
+    data_dir = get_data_dir(config_path=config_path)
     default_download_dir = os.path.join(data_dir, "roboflow", args.project)
     if not args.download_dir:
         print(f"✓ Default download directory from config: {default_download_dir}")
@@ -378,6 +386,11 @@ Configuration:
     
     # API & Project parameters
     parser.add_argument("--api-key", help="Roboflow API key (or set in config/env)")
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="Optional path to local config JSON (otherwise uses ODT_CONFIG_PATH/default lookup).",
+    )
     parser.add_argument("--workspace", help="Roboflow workspace ID (or set in config/env)")
     parser.add_argument("--project", help="Roboflow project ID (or set in config/env)")
     parser.add_argument("--version", type=int, help="Dataset version number (required)")
@@ -403,30 +416,31 @@ Configuration:
     args = parser.parse_args(argv)
     
     # Ensure local config exists
-    ensure_local_config()
+    config_path = Path(args.config).expanduser() if args.config else None
+    ensure_local_config(config_path=config_path)
     
     # Interactive mode or missing required params
     if args.interactive or not all([args.version, args.format]):
-        args = get_interactive_params(args)
+        args = get_interactive_params(args, config_path=config_path)
     
     # Get API key using priority system
     try:
         if not args.api_key:
-            args.api_key = get_roboflow_api_key()
+            args.api_key = get_roboflow_api_key(config_path=config_path)
     except ValueError as e:
         print(f"❌ Error: {e}")
         sys.exit(1)
     
     # Get workspace from config if not provided
     if not args.workspace:
-        args.workspace = get_roboflow_default("workspace")
+        args.workspace = get_roboflow_default("workspace", config_path=config_path)
         if not args.workspace:
             print("❌ Error: Workspace ID is required. Provide via --workspace or config.")
             sys.exit(1)
     
     # Get project from config if not provided
     if not args.project:
-        args.project = get_roboflow_default("project")
+        args.project = get_roboflow_default("project", config_path=config_path)
         if not args.project:
             print("❌ Error: Project ID is required. Provide via --project or config.")
             sys.exit(1)
@@ -442,7 +456,7 @@ Configuration:
     
     # Set download directory
     if not args.download_dir:
-        data_dir = get_data_dir()
+        data_dir = get_data_dir(config_path=config_path)
         args.download_dir = os.path.join(data_dir, "roboflow", args.project)
     
     # Set FiftyOne dataset name

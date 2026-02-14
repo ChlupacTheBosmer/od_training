@@ -20,7 +20,7 @@ Use this protocol when an agent touches the repository for the first time.
 
 Run:
 ```bash
-venv/bin/python scripts/odt.py utility verify-env
+odt utility verify-env
 ```
 
 If unavailable, use local equivalent and report what failed.

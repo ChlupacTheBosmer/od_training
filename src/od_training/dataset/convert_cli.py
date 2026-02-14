@@ -7,11 +7,6 @@ small command interface for script and unified CLI usage.
 import argparse
 import sys
 
-
-from ..utility.runtime_config import ensure_local_config
-
-ensure_local_config()
-
 from .convert import convert_yolo_to_coco, convert_coco_to_yolo, validate_dataset
 
 def main(argv=None):

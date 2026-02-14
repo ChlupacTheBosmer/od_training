@@ -13,7 +13,7 @@ Downloads datasets from Roboflow, optionally unzips, and optionally imports into
 
 Interactive prompt utility with default support and required-field loop.
 
-### `get_interactive_params(args)`
+### `get_interactive_params(args, config_path: Path | None = None)`
 
 Interactive parameter completion workflow using config/env defaults where available.
 
@@ -45,7 +45,7 @@ Top-level CLI orchestration:
 
 1. parse args
 2. optional interactive completion
-3. resolve config/env defaults
+3. resolve config/env defaults (supports `--config`)
 4. download dataset
 5. optional unzip and zip cleanup
 6. optional FiftyOne import
